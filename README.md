@@ -17,8 +17,8 @@ DeepResearch is an AI-powered research assistant that helps automate the researc
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/deepresearch.git
-cd deepresearch
+git clone https://github.com/Leoleojames1/agentChef
+cd agentChef
 ```
 
 ### 2. Create a Virtual Environment (Recommended)
