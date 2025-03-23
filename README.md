@@ -2,6 +2,10 @@
 
 DeepResearch is an AI-powered research assistant that helps automate the research process by searching the web, finding relevant papers, and generating comprehensive reports.
 
+<p align="center">
+  <img src="deepResearch.png" alt="OARC LOGO" width="250"/>
+</p>
+
 ## Prerequisites
 
 - Python 3.8+ 
