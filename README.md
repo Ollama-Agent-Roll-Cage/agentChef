@@ -24,9 +24,15 @@ cd deepresearch
 python -m venv venv
 venv\Scripts\activate
 
+# or with conda
+conda create -n agentChefEnv python=3.11
+
 # On macOS/Linux
-python3 -m venv venv
+python -m venv venv
 source venv/bin/activate
+
+#or conda
+conda activate agentChefEnv
 ```
 
 ### 3. Install Required Dependencies
