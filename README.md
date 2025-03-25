@@ -1,6 +1,6 @@
 # DeepResearch Installation Guide
 
-DeepResearch is an AI-powered research assistant that helps automate the research process by searching the web, finding relevant papers, and generating comprehensive reports.
+(While im working on finishing agentChef feel free to test out this DeepResearch Module that will be a core component of it) DeepResearch is an AI-powered research assistant that helps automate the research process by searching the web, finding relevant papers, and generating comprehensive reports.
 
 <p align="center">
   <img src="deepResearch.png" alt="OARC LOGO" width="450"/>
