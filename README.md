@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/Untitled-removebg-preview.png" alt="OARC LOGO" width="250"/>
+  <img src="https://raw.githubusercontent.com/Leoleojames1/agentChefassets/Untitled-removebg-preview.png" alt="agentCores logo" width="250"/>
 </p>
 <p align="center">
   <a href="https://ko-fi.com/theborch"><img src="assets/buy me a coffee button.png" height="48"></a>
