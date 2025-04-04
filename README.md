@@ -1,4 +1,5 @@
-# DeepResearch Installation Guide
+# agentChef python package
+## DeepResearch UI Installation Guide
 
 (While im working on finishing agentChef feel free to test out this DeepResearch Module that will be a core component of it) DeepResearch is an AI-powered research assistant that helps automate the research process by searching the web, finding relevant papers, and generating comprehensive reports.
 
