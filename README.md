@@ -1,3 +1,11 @@
+<p align="center">
+  <img src="docs/icons/Agent_Chef_logo.png" alt="OARC LOGO" width="250"/>
+</p>
+<p align="center">
+  <a href="https://ko-fi.com/theborch"><img src="docs/icons/buy me a coffee button.png" height="48"></a>
+  <a href="https://discord.gg/dAzSYcnpdF"><img src="docs/icons/Discord button.png" height="48"></a>
+</p>
+
 # Agent Chef
 
 Agent Chef is a comprehensive Python package that leverages the UDRAGS (Unified Dataset Research, Augmentation, & Generation System) framework to streamline the creation, augmentation, and analysis of conversation datasets for AI training and research.
