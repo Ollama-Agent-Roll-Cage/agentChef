@@ -43,8 +43,8 @@ Built on top of local Ollama models, Agent Chef enables researchers and develope
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/agent-chef.git
-cd agent-chef
+git clone https://github.com/Leoleojames1/agentChef.git
+cd agentChef
 
 # Install dependencies
 pip install -r requirements.txt
