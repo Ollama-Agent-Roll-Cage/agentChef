@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Leoleojames1/agentChef/assets/Untitled-removebg-preview.png" alt="agentCores logo" width="250"/>
+  <img src="https://github.com/Leoleojames1/agentChef/blob/86caca2e8b300f3fdee64ee56f02e318992a8f92/assets/Untitled-removebg-preview.png" alt="agentChef logo" width="250"/>
 </p>
 <p align="center">
   <a href="https://ko-fi.com/theborch"><img src="assets/buy me a coffee button.png" height="48"></a>
