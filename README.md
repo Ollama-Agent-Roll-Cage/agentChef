@@ -2,7 +2,7 @@
   <img src="https://github.com/Leoleojames1/agentChef/blob/86caca2e8b300f3fdee64ee56f02e318992a8f92/assets/Untitled-removebg-preview.png" alt="agentChef logo" width="250"/>
 </p>
 <p align="center">
-  <a href="https://ko-fi.com/theborch"><img src="assets/buy me a coffee button.png" height="48"></a>
+  <a href="https://ko-fi.com/theborch"><img src="https://github.com/Leoleojames1/agentChef/blob/7b3e5e86589add6a792acfc1de4538d82918942f/assets/Discord%20button.png" height="48"></a>
   <a href="https://discord.gg/dAzSYcnpdF"><img src="assets/Discord button.png" height="48"></a>
 </p>
 
