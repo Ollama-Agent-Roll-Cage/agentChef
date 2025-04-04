@@ -253,6 +253,33 @@ flowchart TD
     class S tools
 ```
 
+## Package Structure
+
+```md
+agentChef/
+├── pyproject.toml
+├── setup.py
+├── LICENSE
+├── README.md
+├── agentChef/
+│   ├── __init__.py
+│   ├── udrags.py
+│   ├── conversation_generator.py
+│   ├── dataset_expander.py
+│   ├── dataset_cleaner.py
+│   ├── pandas_query_integration.py 
+│   ├── crawlers_module.py
+│   ├── ui_module.py
+│   └── assets/
+│       ├── Untitled-removebg-preview.png
+│       ├── buy me a coffee button.png
+│       └── Discord button.png
+└── tests/
+    ├── __init__.py
+    ├── test_conversation_generator.py
+    └── test_dataset_expander.py
+```
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
