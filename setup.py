@@ -1,5 +1,8 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
-# This file is provided for backward compatibility
-# The actual build configuration is in pyproject.toml
-setup()
+# More explicit setup to help with name/version detection
+setup(
+    name="agentChef",
+    version="0.1.0",
+    packages=find_packages(),
+)
