@@ -1,0 +1,51 @@
+flowchart TD
+    subgraph Research["Research Phase"]
+        A[Research Topic] --> B[ArXiv Searcher]
+        A --> C[Web Crawler]
+        A --> D[GitHub Crawler]
+        B --> E[Process Papers]
+        C --> E
+        D --> E
+        E --> F[Research Summary]
+    end
+    
+    subgraph Generation["Generation Phase"]
+        F --> G[Chunk Content]
+        G --> H[Generate Conversations]
+        H --> I[Original Conversations]
+    end
+    
+    subgraph Augmentation["Augmentation Phase"]
+        I --> J[Dataset Expander]
+        J --> K[Expanded Conversations]
+        K --> L{Needs Cleaning?}
+        L -- Yes --> M[Dataset Cleaner]
+        L -- No --> N[Final Dataset]
+        M --> N
+    end
+    
+    subgraph Analysis["Analysis Phase"]
+        N --> O[PandasQueryIntegration]
+        O --> P[Natural Language Dataset Analysis]
+        P --> Q[Dataset Insights]
+        P --> R[Dataset Comparisons]
+    end
+    
+    subgraph Tools["Shared Tools"]
+        S[OllamaInterface] --- H
+        S --- J
+        S --- M
+        S --- O
+    end
+    
+    classDef research fill:#e1f5fe,stroke:#0288d1
+    classDef generation fill:#e8f5e9,stroke:#2e7d32
+    classDef augmentation fill:#fff8e1,stroke:#ff8f00
+    classDef analysis fill:#f3e5f5,stroke:#7b1fa2
+    classDef tools fill:#fafafa,stroke:#616161
+    
+    class A,B,C,D,E,F research
+    class G,H,I generation
+    class J,K,L,M,N augmentation
+    class O,P,Q,R analysis
+    class S tools

@@ -2,7 +2,7 @@
 Integrates LlamaIndex's PandasQueryEngine into the research and dataset generation system.
 This module provides utilities for natural language querying of pandas DataFrames.
 
-Written By: @AgentChef
+Written By: @BorcherdingL
 Date: 4/4/2025
 """
 

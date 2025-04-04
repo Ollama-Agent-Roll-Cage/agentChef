@@ -1,104 +1,261 @@
-<p align="center">
-  <img src="assets/Untitled-removebg-preview.png" alt="OARC LOGO" width="350"/>
-</p>
-<p align="center">
-  <a href="https://ko-fi.com/theborch"><img src="assets/buy me a coffee button.png" height="48"></a>
-  <a href="https://discord.gg/dAzSYcnpdF"><img src="assets/Discord button.png" height="48"></a>
-</p>
-# agentChef python package
-## DeepResearch UI Installation Guide
+# Agent Chef
 
-(While im working on finishing agentChef feel free to test out this DeepResearch Module that will be a core component of it) DeepResearch is an AI-powered research assistant that helps automate the research process by searching the web, finding relevant papers, and generating comprehensive reports.
+Agent Chef is a comprehensive Python package that leverages the UDRAGS (Unified Dataset Research, Augmentation, & Generation System) framework to streamline the creation, augmentation, and analysis of conversation datasets for AI training and research.
 
-<p align="center">
-  <img src="deepResearch.png" alt="OARC LOGO" width="450"/>
-</p>
+## Overview
 
-## Prerequisites
+Agent Chef provides an end-to-end solution for:
 
-- Python 3.8+ 
-- pip (Python package manager)
-- Ollama installed and running
+- Researching topics from multiple sources (ArXiv, web search, GitHub repositories)
+- Generating high-quality conversation datasets
+- Expanding and augmenting existing datasets
+- Analyzing and cleaning data to ensure quality
+- Querying and analyzing datasets using natural language
 
-## Installation Steps
+Built on top of local Ollama models, Agent Chef enables researchers and developers to work with conversation data efficiently without requiring external API access.
 
-### 1. Clone the Repository
+## Features
 
-```bash
-git clone https://github.com/Leoleojames1/agentChef
-cd agentChef
-```
+- **Multi-source Research Pipeline**: Extract content from ArXiv papers, web searches, and GitHub repositories
+- **Conversation Generation**: Create realistic and varied conversations from research papers and other content
+- **Dataset Expansion**: Paraphrase and expand datasets with controlled variations
+- **NLP Hedging**: Generate nuanced responses with appropriate levels of confidence
+- **Data Analysis**: Query and analyze datasets using natural language with PandasQueryEngine integration
+- **Dataset Cleaning**: Identify and fix quality issues in expanded conversation datasets
+- **Easy-to-use UI**: Simple graphical interface for managing the entire workflow
 
-### 2. Create a Virtual Environment (Recommended)
+## Installation
 
-```bash
-# On Windows
-python -m venv venv
-venv\Scripts\activate
+### Prerequisites
 
-# or with conda
-conda create -n agentChefEnv python=3.11
+- Python 3.8+
+- [Ollama](https://ollama.ai/) installed and configured with models of your choice
 
-# On macOS/Linux
-python -m venv venv
-source venv/bin/activate
-
-#or conda
-conda activate agentChefEnv
-```
-
-### 3. Install Required Dependencies
+### Development Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/agent-chef.git
+cd agent-chef
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Install in development mode
+pip install -e .
 ```
 
-If no requirements.txt file is available, install the required packages manually:
+### Future Installation (Coming Soon)
 
 ```bash
-pip install PyQt6 PyQt6-WebEngine ollama markdown requests duckduckgo-search
+pip install agentChef
 ```
 
-### 4. Install Ollama
+## Quick Start
 
-DeepResearch requires Ollama to access language models locally.
+```python
+from agentChef.conversation_generator import OllamaConversationGenerator
+from agentChef.dataset_expander import DatasetExpander
 
-- Visit [Ollama's official website](https://ollama.ai/) to download and install
-- After installation, pull a model:
-  ```bash
-  ollama pull llama3
-  ```
+# Initialize conversation generator
+generator = OllamaConversationGenerator(model_name="llama3")
 
-### 5. Launch the Application
+# Generate a conversation about a topic
+conversation = generator.generate_conversation(
+    content="Attention mechanisms have become an integral part of compelling sequence modeling...",
+    num_turns=3,
+    conversation_context="AI research"
+)
+
+# Initialize dataset expander
+# Simple Ollama interface wrapper
+class OllamaInterface:
+    def __init__(self, model_name="llama3"):
+        self.model = model_name
+        
+    def chat(self, messages):
+        import ollama
+        return ollama.chat(model=self.model, messages=messages)
+
+ollama_interface = OllamaInterface(model_name="llama3")
+expander = DatasetExpander(ollama_interface, output_dir="./expanded_data")
+
+# Expand the generated conversation
+expanded_conversations = expander.expand_conversation_dataset(
+    conversations=[conversation],
+    expansion_factor=3,
+    static_fields={'human': True, 'gpt': False}  # Keep human questions static
+)
+
+# Save the expanded conversations
+expander.save_conversations_to_jsonl(expanded_conversations, "expanded_conversations")
+```
+
+## Command Line Interface
+
+Agent Chef includes a comprehensive CLI for easy integration into workflows:
 
 ```bash
-python DeepResearch.py
+# Research a topic
+python -m agentChef.udrags --mode research --topic "transformer models" --max-papers 5
+
+# Generate conversations from research
+python -m agentChef.udrags --mode generate --topic "transformer models" --turns 3 --expand 5 --clean
+
+# Process existing papers
+python -m agentChef.udrags --mode process --input papers_dir/ --format jsonl --expand 3
 ```
 
-For advanced usage, you can specify research parameters via command line:
+## Graphical User Interface
+
+For a more interactive experience, Agent Chef provides a PyQt6-based UI:
 
 ```bash
-python DeepResearch.py --topic "Quantum computing algorithms" --model "llama3" --iterations 15 --time-limit 45
+python -m agentChef.udrags --mode ui
 ```
 
-## Configuration
+## Core Components
 
-The default data directory is located at `~/.research_assistant`. Log files and research data will be stored here.
+### OllamaConversationGenerator
 
-## Troubleshooting
+Generate realistic conversations from text content using Ollama LLMs.
 
-- If you encounter issues with Ollama connection, ensure the Ollama service is running
-- For PyQt6 installation problems, you may need to install additional system dependencies depending on your OS
+```python
+generator = OllamaConversationGenerator(model_name="llama3", enable_hedging=True)
 
-## Dependencies
+# Create a conversation about research content
+conversation = generator.generate_conversation(
+    content=paper_abstract,
+    num_turns=3,
+    conversation_context="research paper"
+)
+```
 
-- PyQt6: For the graphical user interface
-- Ollama: For local language model access
-- Markdown: For report formatting
-- DuckDuckGo-Search: For web searches
-- Requests: For HTTP requests
-- Concurrent.futures: For parallel processing
+### PandasQueryIntegration
+
+Natural language querying of pandas DataFrames using LlamaIndex and Ollama.
+
+```python
+from agentChef.pandas_query_integration import PandasQueryIntegration
+
+# Create the query integration
+pandas_query = PandasQueryIntegration(verbose=True)
+
+# Query your DataFrame with natural language
+result = pandas_query.query_dataframe(
+    df, 
+    "What's the average message length by participant type?"
+)
+```
+
+### DatasetExpander
+
+Expand existing conversation datasets by generating paraphrases and variations.
+
+```python
+# Initialize the expander
+expander = DatasetExpander(ollama_interface, output_dir="./expanded_data")
+
+# Expand a conversation dataset
+expanded_conversations = expander.expand_conversation_dataset(
+    conversations=original_conversations,
+    expansion_factor=3,
+    static_fields={'human': False, 'gpt': False}  # Make both dynamic
+)
+```
+
+### DatasetCleaner
+
+Clean and validate expanded datasets by comparing to originals and fixing quality issues.
+
+```python
+from agentChef.dataset_cleaner import DatasetCleaner
+
+# Initialize the cleaner
+cleaner = DatasetCleaner(ollama_interface, output_dir="./cleaned_data")
+
+# Clean the expanded dataset
+cleaned_conversations = cleaner.clean_dataset(
+    original_conversations=original_conversations,
+    expanded_conversations=expanded_conversations,
+    cleaning_criteria={
+        "fix_hallucinations": True,
+        "normalize_style": True,
+        "correct_grammar": True,
+        "ensure_coherence": True
+    }
+)
+```
+
+## UDRAGS Process Flow
+
+See the diagram below for the complete UDRAGS process workflow:
+
+```mermaid
+flowchart TD
+    subgraph Research["Research Phase"]
+        A[Research Topic] --> B[ArXiv Searcher]
+        A --> C[Web Crawler]
+        A --> D[GitHub Crawler]
+        B --> E[Process Papers]
+        C --> E
+        D --> E
+        E --> F[Research Summary]
+    end
+    
+    subgraph Generation["Generation Phase"]
+        F --> G[Chunk Content]
+        G --> H[Generate Conversations]
+        H --> I[Original Conversations]
+    end
+    
+    subgraph Augmentation["Augmentation Phase"]
+        I --> J[Dataset Expander]
+        J --> K[Expanded Conversations]
+        K --> L{Needs Cleaning?}
+        L -- Yes --> M[Dataset Cleaner]
+        L -- No --> N[Final Dataset]
+        M --> N
+    end
+    
+    subgraph Analysis["Analysis Phase"]
+        N --> O[PandasQueryIntegration]
+        O --> P[Natural Language Dataset Analysis]
+        P --> Q[Dataset Insights]
+        P --> R[Dataset Comparisons]
+    end
+    
+    subgraph Tools["Shared Tools"]
+        S[OllamaInterface] --- H
+        S --- J
+        S --- M
+        S --- O
+    end
+    
+    classDef research fill:#e1f5fe,stroke:#0288d1
+    classDef generation fill:#e8f5e9,stroke:#2e7d32
+    classDef augmentation fill:#fff8e1,stroke:#ff8f00
+    classDef analysis fill:#f3e5f5,stroke:#7b1fa2
+    classDef tools fill:#fafafa,stroke:#616161
+    
+    class A,B,C,D,E,F research
+    class G,H,I generation
+    class J,K,L,M,N augmentation
+    class O,P,Q,R analysis
+    class S tools
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-[Apache 2.0 License Here]
+MIT
+
+## Acknowledgments
+
+Agent Chef builds upon the UDRAGS framework and integrates with several open-source projects:
+- Ollama for local LLM access
+- LlamaIndex for natural language querying of structured data
+- PyQt6 for the graphical user interface

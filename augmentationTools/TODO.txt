@@ -1,5 +1,0 @@
-#augmentation tools todo
-
-1. add llama index pandas query engine and dataframes to all classes effectively
-
-4. ensure dataset cleaner works
