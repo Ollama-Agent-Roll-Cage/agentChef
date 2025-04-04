@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """UDRAGS.py
-U.D.R.A.G.S. Unified Dataset Research Augmentation, & Generation System
+U.D.R.A.G.S. Unified Dataset Research, Augmentation, & Generation System
 
 This module replaces the previous research_thread.py, research_ui.py, and research_utils.py
 by leveraging the functionality provided in the crawlers-module.py utilities.
