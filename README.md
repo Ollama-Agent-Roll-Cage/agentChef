@@ -94,4 +94,4 @@ The default data directory is located at `~/.research_assistant`. Log files and 
 
 ## License
 
-[Your License Here]
+[Apache 2.0 License Here]
