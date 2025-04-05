@@ -12,7 +12,10 @@ import json
 import asyncio
 import threading
 from pathlib import Path
-from datetime import datetime
+
+from datetime import datetime, timezone
+UTC = timezone.utc
+
 import logging
 import webbrowser
 from typing import Dict, List, Any, Optional, Union, Tuple

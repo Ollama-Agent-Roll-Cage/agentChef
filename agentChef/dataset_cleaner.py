@@ -9,7 +9,7 @@ import numpy as np
 
 # Import the PandasQueryIntegration
 try:
-    from pandas_query_integration import PandasQueryIntegration, OllamaLlamaIndexIntegration
+    from agentChef.pandas_query import PandasQueryIntegration, OllamaLlamaIndexIntegration
     HAS_QUERY_INTEGRATION = True
 except ImportError:
     HAS_QUERY_INTEGRATION = False

@@ -3,7 +3,7 @@
 U.D.R.A.G.S. Unified Dataset Research, Augmentation, & Generation System
 
 This module replaces the previous research_thread.py, research_ui.py, and research_utils.py
-by leveraging the functionality provided in the crawlers-module.py utilities.
+by leveraging the functionality provided in the crawlers_module.py utilities.
 
 It provides a complete pipeline for:
 1. Researching topics using ArXiv, web search, and GitHub repositories
@@ -12,29 +12,33 @@ It provides a complete pipeline for:
 4. Cleaning and validating the expanded datasets
 
 Usage:
-    python unified_research.py --topic "Your research topic" --mode research
-    python unified_research.py --input papers_dir/ --mode generate --expand 3 --clean
+    python -m agentChef.udrags --topic "Your research topic" --mode research
+    python -m agentChef.udrags --input papers_dir/ --mode generate --expand 3 --clean
 
 Author: @Borcherdingl
 Date: 04/04/2025
 """
 
 import os
-import re
 import sys
 import json
-import time
-import shutil
-import argparse
 import logging
-import tempfile
+import argparse
 import asyncio
+import tempfile
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Union, Tuple
 
+try:
+    import ollama
+    HAS_OLLAMA = True
+except ImportError:
+    HAS_OLLAMA = False
+    logging.warning("Ollama not available. Some features will be disabled.")
+
 # Import crawler modules
-from crawlers_module import (
+from agentChef.crawlers_module import (
     WebCrawler, 
     ArxivSearcher, 
     DuckDuckGoSearcher, 
@@ -42,9 +46,9 @@ from crawlers_module import (
 )
 
 # Import data processing modules
-from conversation_generator import OllamaConversationGenerator
-from dataset_expander import DatasetExpander
-from dataset_cleaner import DatasetCleaner
+from agentChef.conversation_generator import OllamaConversationGenerator
+from agentChef.dataset_expander import DatasetExpander
+from agentChef.dataset_cleaner import DatasetCleaner
 
 # Optional UI imports - only imported if UI mode is selected
 try:

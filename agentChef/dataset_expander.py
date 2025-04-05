@@ -8,6 +8,14 @@ from tqdm import tqdm
 import numpy as np
 import random
 
+# Import the PandasQueryIntegration
+try:
+    from agentChef.pandas_query import PandasQueryIntegration, OllamaLlamaIndexIntegration
+    HAS_QUERY_INTEGRATION = True
+except ImportError:
+    HAS_QUERY_INTEGRATION = False
+    logging.warning("LlamaIndex not installed. PandasQueryEngine will not be available.")
+
 class DatasetExpander:
     """
     A class to expand datasets by generating paraphrases and variations of conversation data,
@@ -15,20 +23,48 @@ class DatasetExpander:
     Works with conversation data in the format produced by OllamaConversationGenerator.
     """
     
-    def __init__(self, ollama_interface, output_dir="./output"):
+    def __init__(self, ollama_interface, output_dir="./output", use_llama_index=True, openai_api_key=None):
         """
         Initialize the DatasetExpander.
         
         Args:
             ollama_interface: An interface to Ollama for generating text
             output_dir (str): Directory to save expanded datasets
+            use_llama_index (bool): Whether to use LlamaIndex for advanced DataFrame analysis
+            openai_api_key (str, optional): OpenAI API key for LlamaIndex integration
         """
         self.ollama_interface = ollama_interface
         self.output_dir = output_dir
+        self.use_llama_index = use_llama_index
+        self.openai_api_key = openai_api_key
+        
         os.makedirs(output_dir, exist_ok=True)
         self.logger = logging.getLogger(__name__)
         logging.basicConfig(level=logging.INFO, 
                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        
+        # Initialize pandas query integration if available
+        self.pandas_query = None
+        self.ollama_query = None
+        
+        if use_llama_index and HAS_QUERY_INTEGRATION:
+            try:
+                self.pandas_query = PandasQueryIntegration(
+                    openai_api_key=openai_api_key,
+                    verbose=True,
+                    synthesize_response=True
+                )
+                self.logger.info("Initialized PandasQueryIntegration for advanced DataFrame analysis")
+            except ImportError:
+                self.logger.warning("LlamaIndex not available. Falling back to OllamaLlamaIndexIntegration.")
+                try:
+                    self.ollama_query = OllamaLlamaIndexIntegration(
+                        ollama_model=getattr(ollama_interface, 'model', "llama3"),
+                        verbose=True
+                    )
+                    self.logger.info("Initialized OllamaLlamaIndexIntegration for DataFrame analysis")
+                except ImportError:
+                    self.logger.warning("Neither LlamaIndex nor Ollama are available for advanced DataFrame querying")
     
     def expand_conversation_dataset(self, 
                                   conversations: List[List[Dict[str, str]]], 
@@ -370,26 +406,41 @@ class DatasetExpander:
     
     def convert_conversations_to_dataframe(self, conversations: List[List[Dict[str, str]]]) -> pd.DataFrame:
         """
-        Convert conversations to a DataFrame format with human-gpt alternating pairs.
+        Convert conversations to a DataFrame format for analysis.
         
         Args:
             conversations: List of conversations
             
         Returns:
-            DataFrame with columns for human input and gpt output
+            DataFrame with structured conversation data
         """
         data = []
         
-        for conversation in conversations:
-            # Group by pairs (human followed by gpt)
-            for i in range(0, len(conversation)-1, 2):
-                if i+1 < len(conversation):
-                    if conversation[i]['from'] == 'human' and conversation[i+1]['from'] == 'gpt':
-                        data.append({
-                            'instruction': "Answer the user's question about the research paper.",
-                            'input': conversation[i]['value'],
-                            'output': conversation[i+1]['value']
-                        })
+        for conv_idx, conversation in enumerate(conversations):
+            for turn_idx, turn in enumerate(conversation):
+                source = turn.get('from', '')
+                value = turn.get('value', '')
+                
+                # Create a row for this turn
+                row = {
+                    'conversation_id': conv_idx,
+                    'turn_idx': turn_idx,
+                    'source': source,
+                    'content': value,
+                    'content_length': len(value),
+                    'word_count': len(value.split()),
+                    'is_question': self._is_question(value)
+                }
+                
+                data.append(row)
+                
+        # Create DataFrame
+        if not data:
+            # Return an empty DataFrame with the expected columns
+            return pd.DataFrame(columns=[
+                'conversation_id', 'turn_idx', 'source', 'content', 
+                'content_length', 'word_count', 'is_question'
+            ])
         
         return pd.DataFrame(data)
     
@@ -426,6 +477,116 @@ class DatasetExpander:
                 self.logger.info(f"Saved DataFrame to CSV: {csv_path}")
         
         return output_files
+    
+    def analyze_expanded_dataset(self, original_conversations: List[List[Dict[str, str]]], 
+                               expanded_conversations: List[List[Dict[str, str]]]) -> Dict[str, Any]:
+        """
+        Analyze the expanded dataset in comparison to the original using natural language queries.
+        
+        Args:
+            original_conversations: List of original conversations
+            expanded_conversations: List of expanded conversations
+            
+        Returns:
+            Dictionary with analysis results
+        """
+        analysis_results = {
+            "original_count": len(original_conversations),
+            "expanded_count": len(expanded_conversations),
+            "expansion_ratio": len(expanded_conversations) / len(original_conversations) if original_conversations else 0,
+            "basic_statistics": {},
+            "advanced_analysis": {}
+        }
+        
+        # Convert conversations to DataFrames for analysis
+        orig_df = self.convert_conversations_to_dataframe(original_conversations)
+        expanded_df = self.convert_conversations_to_dataframe(expanded_conversations)
+        
+        # Calculate basic statistics
+        analysis_results["basic_statistics"] = {
+            "original": {
+                "num_conversations": len(original_conversations),
+                "avg_turns_per_conversation": orig_df.groupby('conversation_id').size().mean() if not orig_df.empty else 0,
+                "avg_human_message_length": orig_df[orig_df['source'] == 'human']['content_length'].mean() if not orig_df.empty else 0,
+                "avg_gpt_message_length": orig_df[orig_df['source'] == 'gpt']['content_length'].mean() if not orig_df.empty else 0
+            },
+            "expanded": {
+                "num_conversations": len(expanded_conversations),
+                "avg_turns_per_conversation": expanded_df.groupby('conversation_id').size().mean() if not expanded_df.empty else 0,
+                "avg_human_message_length": expanded_df[expanded_df['source'] == 'human']['content_length'].mean() if not expanded_df.empty else 0,
+                "avg_gpt_message_length": expanded_df[expanded_df['source'] == 'gpt']['content_length'].mean() if not expanded_df.empty else 0
+            }
+        }
+        
+        # If PandasQueryIntegration is available, use it for advanced analysis
+        if self.pandas_query or self.ollama_query:
+            analysis_results["advanced_analysis"] = self._perform_advanced_analysis(orig_df, expanded_df)
+        
+        return analysis_results
+    
+    def _perform_advanced_analysis(self, orig_df: pd.DataFrame, expanded_df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Perform advanced analysis using PandasQueryIntegration.
+        
+        Args:
+            orig_df: DataFrame with original conversations
+            expanded_df: DataFrame with expanded conversations
+            
+        Returns:
+            Dictionary with advanced analysis results
+        """
+        analysis_results = {}
+        
+        try:
+            # If we have the pandas query integration available
+            if self.pandas_query:
+                # Get insights for both datasets
+                orig_insights = self.pandas_query.generate_dataset_insights(orig_df, num_insights=3)
+                expanded_insights = self.pandas_query.generate_dataset_insights(expanded_df, num_insights=3)
+                
+                # Compare the datasets
+                comparison = self.pandas_query.compare_datasets(
+                    orig_df, expanded_df,
+                    df1_name="Original", df2_name="Expanded",
+                    aspects=["shape", "statistics", "distributions"]
+                )
+                
+                analysis_results = {
+                    "original_insights": orig_insights,
+                    "expanded_insights": expanded_insights,
+                    "comparison": comparison
+                }
+                
+            # Otherwise, if we have the Ollama query integration
+            elif self.ollama_query:
+                # Form some basic analysis queries
+                queries = [
+                    "Compare the average content length between original and expanded conversations",
+                    "Identify the main differences in word count and sentence structure",
+                    "Summarize the key quality differences between original and expanded data"
+                ]
+                
+                # Create a combined dataframe for comparison
+                combined_df = pd.concat([
+                    orig_df.assign(dataset="original"),
+                    expanded_df.assign(dataset="expanded")
+                ])
+                
+                # Run queries
+                query_results = {}
+                for query in queries:
+                    result = self.ollama_query.query_dataframe_with_ollama(combined_df, query)
+                    query_results[query] = result
+                
+                analysis_results = {
+                    "ollama_analysis": query_results
+                }
+                
+        except Exception as e:
+            self.logger.error(f"Error performing advanced analysis: {str(e)}")
+            analysis_results["error"] = str(e)
+            
+        return analysis_results
     
     def _is_question(self, text: str) -> bool:
         """

@@ -16,7 +16,7 @@ Main Components:
 All components use local Ollama models, with no external API dependencies.
 """
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 # Import main components
 try:
@@ -24,7 +24,8 @@ try:
     from .dataset_expander import DatasetExpander
     from .dataset_cleaner import DatasetCleaner
     from .pandas_query import OllamaPandasQuery
-    from .UDRAGS import ResearchManager
+    from .udrags import ResearchManager
+    from .ollama_interface import OllamaInterface
 except ImportError as e:
     import logging
     logging.warning(f"Error importing UDRAGS components: {e}")
@@ -40,7 +41,7 @@ except ImportError:
 
 # Optional UI components
 try:
-    from .ui import UdragsUI, run_ui
+    from .ui_module import UdragsUI, run_ui
     HAS_UI = True
 except ImportError:
     HAS_UI = False

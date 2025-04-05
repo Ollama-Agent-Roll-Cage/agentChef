@@ -1,17 +1,21 @@
-import json
+import os
 import re
-import ollama
+import json
 import logging
-import pandas as pd
 from typing import List, Dict, Any, Optional, Union, Tuple
+import pandas as pd
 import random
+
+# Import OllamaInterface
+from agentChef.ollama_interface import OllamaInterface
 
 # Import OllamaPandasQuery if available
 try:
-    from pandas_query_integration import OllamaPandasQuery
+    from agentChef.pandas_query import OllamaLlamaIndexIntegration
     HAS_QUERY_ENGINE = True
 except ImportError:
     HAS_QUERY_ENGINE = False
+    logging.warning("LlamaIndex not installed. OllamaLlamaIndexIntegration will not be available.")
 
 class OllamaConversationGenerator:
     """
@@ -20,32 +24,33 @@ class OllamaConversationGenerator:
     Enhanced with NLP hedging and analysis capabilities.
     """
     
-    def __init__(self, model_name="llama3", enable_hedging=True):
+    def __init__(self, model_name="llama3", enable_hedging=True, ollama_interface=None):
         """
         Initialize the conversation generator.
         
         Args:
             model_name (str): Name of the Ollama model to use for generating conversations.
             enable_hedging (bool): Whether to enable NLP hedging for more natural responses.
+            ollama_interface (OllamaInterface, optional): Pre-configured Ollama interface.
+                If None, a new interface will be created.
         """
         self.model = model_name
         self.enable_hedging = enable_hedging
         self.logger = logging.getLogger(__name__)
         
+        # Use provided interface or create a new one
+        self.ollama = ollama_interface if ollama_interface else OllamaInterface(model_name)
+        
         # Initialize OllamaPandasQuery if available
         self.query_engine = None
         if HAS_QUERY_ENGINE and enable_hedging:
             try:
-                # Create a simple interface
-                ollama_interface = type('OllamaInterface', (), {
-                    'model': model_name,
-                    'chat': lambda self, messages: ollama.chat(model=model_name, messages=messages)
-                })()
-                
-                self.query_engine = OllamaPandasQuery(ollama_interface=ollama_interface)
-                self.logger.info("Initialized OllamaPandasQuery for conversation analysis")
+                self.query_engine = OllamaLlamaIndexIntegration(
+                    ollama_model=model_name
+                )
+                self.logger.info("Initialized OllamaLlamaIndexIntegration for conversation analysis")
             except Exception as e:
-                self.logger.warning(f"Failed to initialize OllamaPandasQuery: {e}")
+                self.logger.warning(f"Failed to initialize OllamaLlamaIndexIntegration: {e}")
         
     def generate_conversation(self, content, num_turns=3, conversation_context="research",
                            hedging_level="balanced", conversation_history=None):
@@ -91,8 +96,7 @@ class OllamaConversationGenerator:
             system_prompt += f"\n\nBuild upon this existing conversation:\n{json.dumps(conversation_history, indent=2)}"
         
         try:
-            response = ollama.chat(
-                model=self.model,
+            response = self.ollama.chat(
                 messages=[{"role": "system", "content": system_prompt}],
             )
             
@@ -451,7 +455,7 @@ class OllamaConversationGenerator:
         """
         
         try:
-            response = ollama.chat(
+            response = self.ollama.chat(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system_prompt},
