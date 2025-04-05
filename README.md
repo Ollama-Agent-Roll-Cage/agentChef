@@ -532,7 +532,7 @@ This approach significantly reduces the boilerplate code needed for dataset crea
 The workflow diagram (shown below) illustrates how data flows through the different phases of the UDRAGS system, from initial research to final dataset analysis.
 
 ```mermaid
-%%{init: {'theme':'dark'}}%%
+%%{init: {'theme':'dark', 'themeVariables': {'primaryTextColor': '#000000'}}}%%
 flowchart TD
     subgraph Research["Research Phase"]
         A[Research Topic] --> B[ArXiv Searcher]
