@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="https://github.com/Leoleojames1/agentChef/blob/86caca2e8b300f3fdee64ee56f02e318992a8f92/assets/Untitled-removebg-preview.png" alt="agentChef logo" width="250"/>
+  <img src="https://github.com/Leoleojames1/agentChef/blob/cb4b7eb0c102ccec683efc914fd4b14c76f90147/assets/agentChef_logo.png" alt="agentChef logo" width="250"/>
 </p>
 <p align="center">
-  <a href="https://ko-fi.com/theborch"><img src="https://github.com/Leoleojames1/agentChef/blob/7b3e5e86589add6a792acfc1de4538d82918942f/assets/Discord%20button.png" height="48"></a>
-  <a href="https://discord.gg/dAzSYcnpdF"><img src="assets/Discord button.png" height="48"></a>
+  <a href="https://ko-fi.com/theborch"><img src="https://github.com/Leoleojames1/agentChef/blob/2567311951798c49b33d340cb4f928c528283beb/assets/buy%20me%20a%20coffee%20button.png" height="48"></a>
+  <a href="https://discord.gg/dAzSYcnpdF"><img src="https://github.com/Leoleojames1/agentChef/blob/7b3e5e86589add6a792acfc1de4538d82918942f/assets/Discord%20button.png" height="48"></a>
 </p>
 
 # agentChef
@@ -530,6 +530,60 @@ The unified system provides:
 
 This approach significantly reduces the boilerplate code needed for dataset creation while ensuring consistent quality through each stage of the pipeline.
 The workflow diagram (shown below) illustrates how data flows through the different phases of the UDRAGS system, from initial research to final dataset analysis.
+
+```
+flowchart TD
+    subgraph Research["Research Phase"]
+        A[Research Topic] --> B[ArXiv Searcher]
+        A --> C[Web Crawler]
+        A --> D[GitHub Crawler]
+        B --> E[Process Papers]
+        C --> E
+        D --> E
+        E --> F[Research Summary]
+    end
+    
+    subgraph Generation["Generation Phase"]
+        F --> G[Chunk Content]
+        G --> H[Generate Conversations]
+        H --> I[Original Conversations]
+    end
+    
+    subgraph Augmentation["Augmentation Phase"]
+        I --> J[Dataset Expander]
+        J --> K[Expanded Conversations]
+        K --> L{Needs Cleaning?}
+        L -- Yes --> M[Dataset Cleaner]
+        L -- No --> N[Final Dataset]
+        M --> N
+    end
+    
+    subgraph Analysis["Analysis Phase"]
+        N --> O[PandasQueryIntegration]
+        O --> P[Natural Language Dataset Analysis]
+        P --> Q[Dataset Insights]
+        P --> R[Dataset Comparisons]
+    end
+    
+    subgraph Tools["Shared Tools"]
+        S[OllamaInterface] --- H
+        S --- J
+        S --- M
+        S --- O
+    end
+    
+    classDef research fill:#bbdefb,stroke:#01579b,stroke-width:2px
+    classDef generation fill:#a5d6a7,stroke:#1b5e20
+    classDef augmentation fill:#ffcc80,stroke:#e65100
+    classDef analysis fill:#ce93d8,stroke:#4a148c
+    classDef tools fill:#cfd8dc,stroke:#424242
+
+    class A,B,C,D,E,F research
+    class G,H,I generation
+    class J,K,L,M,N augmentation
+    class O,P,Q,R analysis
+    class S tools
+```
 
 ## Advanced Usage
 
