@@ -573,17 +573,18 @@ flowchart TD
         S --- O
     end
     
-    classDef research fill:#bbdefb,stroke:#01579b,stroke-width:2px
-    classDef generation fill:#a5d6a7,stroke:#1b5e20
-    classDef augmentation fill:#ffcc80,stroke:#e65100
-    classDef analysis fill:#ce93d8,stroke:#4a148c
-    classDef tools fill:#cfd8dc,stroke:#424242
+    classDef research fill:#ff0000,stroke:#b71c1c,stroke-width:2px
+    classDef generation fill:#ff0000,stroke:#b71c1c
+    classDef augmentation fill:#ff0000,stroke:#b71c1c
+    classDef analysis fill:#ff0000,stroke:#b71c1c
+    classDef tools fill:#ff0000,stroke:#b71c1c
 
     class A,B,C,D,E,F research
     class G,H,I generation
     class J,K,L,M,N augmentation
     class O,P,Q,R analysis
     class S tools
+
 ```
 
 ## Advanced Usage
