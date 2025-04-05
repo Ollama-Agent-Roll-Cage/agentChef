@@ -6,9 +6,9 @@
   <a href="https://discord.gg/dAzSYcnpdF"><img src="assets/Discord button.png" height="48"></a>
 </p>
 
-# AgentChef
+# agentChef
 
-AgentChef is a comprehensive Python library for AI research, dataset generation, and conversation management using large language models. It provides tools for crawling, processing, and analyzing data sources including web pages, ArXiv papers, and GitHub repositories, and generating high-quality conversation datasets for AI training.
+agentChef is a comprehensive Python library for AI research, dataset generation, and conversation management using large language models. It provides tools for crawling, processing, and analyzing data sources including web pages, ArXiv papers, and GitHub repositories, and generating high-quality conversation datasets for AI training.
 
 [![PyPI version](https://badge.fury.io/py/agentChef.svg)](https://badge.fury.io/py/agentChef)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -76,24 +76,15 @@ Built on top of local Ollama models, Agent Chef enables researchers and develope
 
 ```bash
 # Install the base package
-pip install agentchef
-
-# Install optional dependencies for UI
-pip install 'agentchef[ui]'
-
-# Install dependencies for advanced analysis
-pip install 'agentchef[analysis]'
-
-# Install all dependencies
-pip install 'agentchef[full]'
+pip install agentChef
 ```
 
 ### Development Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/Leoleojames1/agentchef.git
-cd agentchef
+git clone https://github.com/Leoleojames1/agentChef.git
+cd agentChef
 
 # Create and activate a virtual environment
 python -m venv .venv
@@ -120,7 +111,7 @@ pip install -e .
 
 ## Core Components
 
-AgentChef consists of several core modules:
+agentChef consists of several core modules:
 
 - **conversation_generator.py**: Generate conversations from content
 - **dataset_expander.py**: Expand datasets with variations
@@ -503,7 +494,7 @@ print("Conversation DataFrame:")
 print(df.head())
 
 # Convert back to conversation format
-# (This would require a custom function, not directly provided by AgentChef)
+# (This would require a custom function, not directly provided by agentChef)
 
 # Save in multiple formats
 output_files = expander.convert_to_multi_format(
@@ -561,7 +552,7 @@ except ImportError:
 
 ## Command-line Interface
 
-AgentChef provides a comprehensive command-line interface through the `udrags.py` module:
+agentChef provides a comprehensive command-line interface through the `udrags.py` module:
 
 ### Research Mode
 
@@ -589,7 +580,7 @@ python -m agentChef.udrags --mode ui
 
 ## Building Custom Workflows
 
-AgentChef is designed to be modular, allowing you to build custom workflows by combining different components. The UDRAGS system (Unified Dataset Research, Augmentation, & Generation System) itself is an example of a custom workflow built on top of AgentChef's core components.
+agentChef is designed to be modular, allowing you to build custom workflows by combining different components. The UDRAGS system (Unified Dataset Research, Augmentation, & Generation System) itself is an example of a custom workflow built on top of agentChef's core components.
 
 Here's an example of how you can create your own research-generate-augment-analyze-clean pipeline, mirroring the UDRAGS approach:
 
@@ -862,7 +853,7 @@ async def custom_udrags_workflow(topic):
 workflow_results = asyncio.run(custom_udrags_workflow("attention mechanisms in neural networks"))
 ```
 
-This custom workflow demonstrates how you can combine AgentChef's components to create a specialized pipeline following the UDRAGS approach: research-generate-augment-analyze-clean. Each phase builds on the previous one, creating a comprehensive system for dataset generation and processing that mirrors the core functionality of the built-in UDRAGS system.
+This custom workflow demonstrates how you can combine agentChef's components to create a specialized pipeline following the UDRAGS approach: research-generate-augment-analyze-clean. Each phase builds on the previous one, creating a comprehensive system for dataset generation and processing that mirrors the core functionality of the built-in UDRAGS system.
 
 You can adapt this pattern to create workflows for your specific needs, focusing on any part of the pipeline or extending it with additional processing steps.
 
