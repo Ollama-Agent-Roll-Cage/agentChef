@@ -462,6 +462,60 @@ async def unified_research_and_generation():
 asyncio.run(unified_research_and_generation())
 ```
 
+```
+flowchart TD
+    subgraph Research["Research Phase"]
+        A[Research Topic] --> B[ArXiv Searcher]
+        A --> C[Web Crawler]
+        A --> D[GitHub Crawler]
+        B --> E[Process Papers]
+        C --> E
+        D --> E
+        E --> F[Research Summary]
+    end
+    
+    subgraph Generation["Generation Phase"]
+        F --> G[Chunk Content]
+        G --> H[Generate Conversations]
+        H --> I[Original Conversations]
+    end
+    
+    subgraph Augmentation["Augmentation Phase"]
+        I --> J[Dataset Expander]
+        J --> K[Expanded Conversations]
+        K --> L{Needs Cleaning?}
+        L -- Yes --> M[Dataset Cleaner]
+        L -- No --> N[Final Dataset]
+        M --> N
+    end
+    
+    subgraph Analysis["Analysis Phase"]
+        N --> O[PandasQueryIntegration]
+        O --> P[Natural Language Dataset Analysis]
+        P --> Q[Dataset Insights]
+        P --> R[Dataset Comparisons]
+    end
+    
+    subgraph Tools["Shared Tools"]
+        S[OllamaInterface] --- H
+        S --- J
+        S --- M
+        S --- O
+    end
+    
+    classDef research fill:#bbdefb,stroke:#01579b,stroke-width:2px
+    classDef generation fill:#a5d6a7,stroke:#1b5e20
+    classDef augmentation fill:#ffcc80,stroke:#e65100
+    classDef analysis fill:#ce93d8,stroke:#4a148c
+    classDef tools fill:#cfd8dc,stroke:#424242
+
+    class A,B,C,D,E,F research
+    class G,H,I generation
+    class J,K,L,M,N augmentation
+    class O,P,Q,R analysis
+    class S tools
+```
+
 ## Advanced Usage
 
 ### Working with Custom Dataset Formats
