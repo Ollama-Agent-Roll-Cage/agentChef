@@ -9,3 +9,8 @@ python -m twine upload --repository testpypi dist/*
 
 # Once verified on TestPyPI, upload to PyPI
 python -m twine upload dist/*
+
+# other
+pip freeze | Select-String -Pattern "^(?!pip)" | ForEach-Object { pip uninstall -y $_.ToString().Trim() }
+evil
+easily resets your venv if you accidentally install into your root venv

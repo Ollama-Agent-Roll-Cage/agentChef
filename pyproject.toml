@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentChef"
-version = "0.2.1"
+version = "0.2.3"
 description = "Comprehensive toolkit for conversation dataset creation, augmentation, and analysis"
 readme = "README.md"
 requires-python = ">=3.8"
