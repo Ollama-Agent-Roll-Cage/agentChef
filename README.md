@@ -531,7 +531,7 @@ The unified system provides:
 This approach significantly reduces the boilerplate code needed for dataset creation while ensuring consistent quality through each stage of the pipeline.
 The workflow diagram (shown below) illustrates how data flows through the different phases of the UDRAGS system, from initial research to final dataset analysis.
 
-```
+```mermaid
 flowchart TD
     subgraph Research["Research Phase"]
         A[Research Topic] --> B[ArXiv Searcher]
