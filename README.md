@@ -169,6 +169,8 @@ print(analysis['basic_statistics'])
 
 ### Research and Data Collection
 
+The Research and Data Collection module allows you to gather comprehensive information from multiple sources including ArXiv papers, web searches, and GitHub repositories. This example shows how to use the ResearchManager to explore a topic with controlled parameters.
+
 ```python
 import asyncio
 from agentChef.udrags import ResearchManager
@@ -199,7 +201,11 @@ async def research_topic():
 asyncio.run(research_topic())
 ```
 
+This example demonstrates how to research transformer neural networks by gathering information from multiple sources. The ResearchManager coordinates the research process, retrieving papers from ArXiv, results from web searches, and analyzing specified GitHub repositories. The results include a comprehensive summary and structured data that can be used for further processing or analysis.
+
 ### Conversation Generation
+
+The Conversation Generator transforms research content into natural-sounding dialogue between a human and an AI assistant. It can generate multi-turn conversations with configurable hedging and domain context to create training data that mimics real interactions.
 
 ```python
 from agentChef.ollama_interface import OllamaInterface
@@ -244,7 +250,19 @@ print("\nHedged Response:")
 print(hedged_response)
 ```
 
+This example shows two key capabilities:
+
+1. Generating complete multi-turn conversations from source content with balanced hedging for natural dialogue flow
+Creating standalone responses with controlled hedging levels and domain expertise markers.
+
+2. The hedging_level parameter allows you to control how cautious or confident the AI responses appear, while conversation_context sets the appropriate domain knowledge context.
+Dataset Expansion.
+
+The Dataset Expander multiplies your training data by creating diverse variations of existing conversations. It provides fine-grained control over which parts of the conversation remain static and which are varied, allowing you to maintain consistency where needed.
+
 ### Dataset Expansion
+
+The Dataset Expander multiplies your training data by creating diverse variations of existing conversations. It provides fine-grained control over which parts of the conversation remain static and which are varied, allowing you to maintain consistency where needed.
 
 ```python
 import asyncio
@@ -297,7 +315,19 @@ async def expand_dataset():
 asyncio.run(expand_dataset())
 ```
 
+This workflow demonstrates how to:
+
+1. Process a research paper by breaking it into manageable chunks
+2. Generate initial conversations from each chunk
+3. Create multiple variations of each conversation with control over which parts vary
+4. Save the expanded dataset in multiple formats for different use cases
+5. Analyze the quality of the expanded dataset compared to the original
+
+The static_fields parameter lets you keep human questions unchanged while varying AI responses, creating diverse training examples while maintaining question consistency.
+
 ### Dataset Cleaning
+
+The Dataset Cleaner ensures high-quality training data by identifying and fixing issues in expanded conversations. It compares expanded data against original conversations to detect and correct problems like grammatical errors, stylistic inconsistencies, and coherence issues.
 
 ```python
 import asyncio
@@ -353,7 +383,17 @@ async def clean_dataset():
 asyncio.run(clean_dataset())
 ```
 
+The cleaning process involves:
+
+1. Analyzing expanded conversations to identify potential quality issues
+2. Applying targeted cleaning criteria to fix specific problems
+3. Maintaining the semantic meaning of original content while improving quality
+
+The configurable cleaning criteria allow you to focus on specific issues like fixing grammar, ensuring stylistic consistency, or correcting factual errors while preserving the core information.
+
 ### Web Crawling and Paper Analysis
+
+The Crawlers Module provides specialized tools for extracting information from different sources. This example demonstrates how to fetch and process content from websites, ArXiv papers, and search engines in a structured way.
 
 ```python
 import asyncio
@@ -392,7 +432,17 @@ async def crawl_and_analyze():
 asyncio.run(crawl_and_analyze())
 ```
 
+This module handles various data sources with specialized parsers:
+
+1. The WebCrawler extracts clean text from arbitrary web pages
+2. The ArxivSearcher fetches and formats academic papers with proper metadata
+3. The DuckDuckGoSearcher performs web searches with privacy-focused results
+
+Each component handles the complexities of its respective source, providing a unified interface for research data collection.
+
 ### GitHub Repository Analysis
+
+The GitHub Crawler allows deep analysis of code repositories, providing insights beyond what's visible on the web interface. It can clone repositories, analyze code structure, and perform natural language queries across the codebase.
 
 ```python
 import asyncio
@@ -422,8 +472,17 @@ async def analyze_github_repo():
 # Run the async function
 asyncio.run(analyze_github_repo())
 ```
+This functionality enables:
+
+1. Generating high-level summaries of repository structure and content
+2. Querying repositories using natural language to find relevant code
+3. Analyzing code patterns and implementations across large codebases
+
+This is particularly useful for understanding how concepts are implemented in real-world code or finding examples of specific techniques in open-source projects.
 
 ### Using the Unified System (UDRAGS)
+
+The UDRAGS (Unified Dataset Research, Augmentation, & Generation System) combines all components into a seamless end-to-end pipeline for dataset creation. It manages the entire workflow from initial research to final cleaned dataset.
 
 ```python
 import asyncio
@@ -461,6 +520,16 @@ async def unified_research_and_generation():
 # Run the async function
 asyncio.run(unified_research_and_generation())
 ```
+
+The unified system provides:
+
+1. A streamlined process that handles research, generation, expansion, and cleaning
+2. Real-time progress updates through callback functions
+3. Automatic management of intermediary data between pipeline stages
+4. Consolidated output in multiple formats
+
+This approach significantly reduces the boilerplate code needed for dataset creation while ensuring consistent quality through each stage of the pipeline.
+The workflow diagram (shown below) illustrates how data flows through the different phases of the UDRAGS system, from initial research to final dataset analysis.
 
 ## Advanced Usage
 
