@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="https://github.com/Leoleojames1/agentChef/assets/agentChef_logo.png" alt="agentChef logo" width="250"/>
+  <img src="assets/agentChef_logo.png" alt="agentChef logo" width="250"/>
 </p>
 <p align="center">
-  <a href="https://ko-fi.com/theborch"><img src="https://github.com/Leoleojames1/agentChef/assets/buy%20me%20a%20coffee%20button.png" height="48"></a>
-  <a href="https://discord.gg/dAzSYcnpdF"><img src="https://github.com/Leoleojames1/agentChef/assets/Discord%20button.png" height="48"></a>
+  <a href="https://ko-fi.com/theborch"><img src="assets/buy me a coffee button.png" height="48"></a>
+  <a href="https://discord.gg/dAzSYcnpdF"><img src="assets/Discord button.png" height="48"></a>
 </p>
 
 # agentChef
