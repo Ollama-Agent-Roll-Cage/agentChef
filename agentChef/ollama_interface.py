@@ -1,40 +1,52 @@
 import logging
 from typing import List, Dict, Any, Optional
 
+try:
+    import ollama
+    from ollama import Client, AsyncClient, ResponseError
+    OLLAMA_AVAILABLE = True
+except ImportError:
+    OLLAMA_AVAILABLE = False
+    logging.warning("Ollama package not found. Please install with 'pip install ollama'")
+
 class OllamaInterface:
     """
-    A unified interface for interacting with Ollama.
+    A unified interface for interacting with Ollama using the official Python library.
     This class provides a consistent way to access Ollama functionality
     throughout the agentChef package.
     """
     
-    def __init__(self, model_name="llama3"):
+    def __init__(self, model_name="llama3", host="http://localhost:11434"):
         """
         Initialize the Ollama interface.
         
         Args:
             model_name (str): Name of the Ollama model to use
+            host (str): Ollama API host URL
         """
         self.model = model_name
+        self.host = host
         self.logger = logging.getLogger(__name__)
+        self.ollama_available = OLLAMA_AVAILABLE
         
-        # Check if ollama is available
-        try:
-            import ollama
-            self.ollama = ollama
-            self.ollama_available = True
-        except ImportError:
-            self.ollama_available = False
-            self.logger.warning("Ollama package not found. Please install with 'pip install ollama'")
+        # Set up clients if ollama is available
+        if self.ollama_available:
+            try:
+                self.client = Client(host=self.host)
+                self.async_client = AsyncClient(host=self.host)
+            except Exception as e:
+                self.logger.warning(f"Could not initialize Ollama clients: {e}")
+                self.ollama_available = False
     
-    def chat(self, messages: List[Dict[str, str]]) -> Dict[str, Any]:
+    def chat(self, messages: List[Dict[str, str]], stream=False) -> Dict[str, Any]:
         """
         Send a chat request to Ollama.
         
         Args:
             messages (List[Dict[str, str]]): List of message objects in the format:
                 [{"role": "system", "content": "..."}, {"role": "user", "content": "..."}]
-        
+            stream (bool): Whether to stream the response
+            
         Returns:
             Dict[str, Any]: Response from Ollama or an error message
         """
@@ -44,7 +56,11 @@ class OllamaInterface:
             return {"error": error_msg, "message": {"content": error_msg}}
         
         try:
-            return self.ollama.chat(model=self.model, messages=messages)
+            return ollama.chat(model=self.model, messages=messages, stream=stream)
+        except ResponseError as e:
+            error_msg = f"Ollama API error: {e.error} (Status code: {e.status_code})"
+            self.logger.error(error_msg)
+            return {"error": error_msg, "message": {"content": error_msg}}
         except Exception as e:
             error_msg = f"Error communicating with Ollama: {str(e)}"
             self.logger.error(error_msg)
@@ -65,7 +81,7 @@ class OllamaInterface:
             return []
         
         try:
-            response = self.ollama.embeddings(model=self.model, prompt=text)
+            response = ollama.embed(model=self.model, input=text)
             return response.get("embedding", [])
         except Exception as e:
             self.logger.error(f"Error generating embeddings: {str(e)}")
@@ -82,9 +98,32 @@ class OllamaInterface:
             return False
             
         try:
-            # Try a simple request to check if Ollama server is responding
-            self.ollama.list()
+            # Use a simple list call to check if Ollama server is responding
+            ollama.list()
             return True
         except Exception as e:
             self.logger.error(f"Ollama is not accessible: {str(e)}")
             return False
+    
+    async def async_chat(self, messages: List[Dict[str, str]], stream=False):
+        """
+        Asynchronously send a chat request to Ollama.
+        
+        Args:
+            messages (List[Dict[str, str]]): List of message objects
+            stream (bool): Whether to stream the response
+            
+        Returns:
+            Response from Ollama or async generator if streaming
+        """
+        if not self.ollama_available:
+            error_msg = "Ollama is not available. Please install with 'pip install ollama'"
+            self.logger.error(error_msg)
+            return {"error": error_msg, "message": {"content": error_msg}}
+        
+        try:
+            return await self.async_client.chat(model=self.model, messages=messages, stream=stream)
+        except Exception as e:
+            error_msg = f"Error in async communication with Ollama: {str(e)}"
+            self.logger.error(error_msg)
+            return {"error": error_msg, "message": {"content": error_msg}}

@@ -2,6 +2,8 @@
 """udrags.py
 U.D.R.A.G.S. Unified Dataset Research, Augmentation, & Generation System
 
+#TODO rename to delegator for each research manager
+
 This module replaces the previous research_thread.py, research_ui.py, and research_utils.py
 by leveraging the functionality provided in the crawlers_module.py utilities.
 
@@ -21,6 +23,7 @@ Date: 04/04/2025
 
 import os
 import sys
+import shutil
 import json
 import logging
 import argparse
@@ -87,7 +90,7 @@ class ResearchManager:
     def __init__(self, data_dir=DEFAULT_DATA_DIR, model_name="llama3"):
         """
         Initialize the research manager.
-        
+
         Args:
             data_dir: Directory to store research data and generated datasets
             model_name: Name of the Ollama model to use for generations

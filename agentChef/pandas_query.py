@@ -12,13 +12,8 @@ import pandas as pd
 from typing import Dict, List, Optional, Union, Any
 
 # LlamaIndex imports
-try:
-    from llama_index.experimental.query_engine import PandasQueryEngine
-    from llama_index.core import PromptTemplate
-    HAS_LLAMA_INDEX = True
-except ImportError:
-    HAS_LLAMA_INDEX = False
-    logging.warning("LlamaIndex not installed. PandasQueryEngine will not be available.")
+from llama_index.experimental.query_engine import PandasQueryEngine
+from llama_index.core import PromptTemplate
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -28,28 +23,24 @@ class PandasQueryIntegration:
     Integrates LlamaIndex's PandasQueryEngine for natural language querying of pandas DataFrames.
     """
     
-    def __init__(self, openai_api_key=None, verbose=True, synthesize_response=True):
+    def __init__(self, verbose=True, synthesize_response=True):
         """
         Initialize the PandasQueryIntegration.
         
         Args:
-            openai_api_key (str, optional): OpenAI API key. If None, uses environment variable.
             verbose (bool): Whether to print verbose output.
             synthesize_response (bool): Whether to synthesize a natural language response.
         """
         self.verbose = verbose
         self.synthesize_response = synthesize_response
         
-        # Set OpenAI API key if provided
-        if openai_api_key:
-            os.environ["OPENAI_API_KEY"] = openai_api_key
+        # Check if we can use local models
+        try:
+            import ollama
+            self.use_local_models = True
+        except ImportError:
+            self.use_local_models = False
         
-        # Check if LlamaIndex is available
-        if not HAS_LLAMA_INDEX:
-            raise ImportError(
-                "LlamaIndex not installed. Install with: pip install llama-index llama-index-experimental"
-            )
-    
     def create_query_engine(self, df: pd.DataFrame, custom_instructions: Optional[str] = None) -> Any:
         """
         Create a PandasQueryEngine for the given DataFrame.
@@ -291,9 +282,8 @@ class OllamaLlamaIndexIntegration:
         # Check if Ollama is available
         try:
             import ollama
-            self.ollama = ollama
         except ImportError:
-            raise ImportError("Ollama not installed. Install with: pip install ollama")
+            ollama = None
     
     def query_dataframe_with_ollama(self, df: pd.DataFrame, query: str) -> Dict[str, Any]:
         """

@@ -23,7 +23,7 @@ class DatasetExpander:
     Works with conversation data in the format produced by OllamaConversationGenerator.
     """
     
-    def __init__(self, ollama_interface, output_dir="./output", use_llama_index=True, openai_api_key=None):
+    def __init__(self, ollama_interface, output_dir="./output", use_llama_index=True):
         """
         Initialize the DatasetExpander.
         
@@ -31,12 +31,10 @@ class DatasetExpander:
             ollama_interface: An interface to Ollama for generating text
             output_dir (str): Directory to save expanded datasets
             use_llama_index (bool): Whether to use LlamaIndex for advanced DataFrame analysis
-            openai_api_key (str, optional): OpenAI API key for LlamaIndex integration
         """
         self.ollama_interface = ollama_interface
         self.output_dir = output_dir
         self.use_llama_index = use_llama_index
-        self.openai_api_key = openai_api_key
         
         os.makedirs(output_dir, exist_ok=True)
         self.logger = logging.getLogger(__name__)
@@ -50,7 +48,6 @@ class DatasetExpander:
         if use_llama_index and HAS_QUERY_INTEGRATION:
             try:
                 self.pandas_query = PandasQueryIntegration(
-                    openai_api_key=openai_api_key,
                     verbose=True,
                     synthesize_response=True
                 )
@@ -173,16 +170,14 @@ class DatasetExpander:
             
             paraphrased_text = response['message']['content'].strip()
             
-            # Verify and clean the paraphrased text
-            verified_text = self.verify_paraphrase(
-                original=text,
-                paraphrased=paraphrased_text,
-                reference=reference_values,
-                is_question=is_question
-            )
+            # Ensure question mark is present if this is a question
+            if is_question and not paraphrased_text.endswith('?'):
+                paraphrased_text += '?'
+            elif not is_question and paraphrased_text.endswith('?'):
+                paraphrased_text = paraphrased_text[:-1] + '.'
             
-            # Final cleaning
-            cleaned_text = self.clean_generated_content(verified_text, is_question)
+            # Clean the generated content
+            cleaned_text = self.clean_generated_content(paraphrased_text, is_question)
             
             return cleaned_text
             
@@ -218,25 +213,21 @@ class DatasetExpander:
         and includes the reference values.
         Do not include any explanatory text or meta-information in your response."""
 
-        try:
-            response = self.ollama_interface.chat(messages=[
-                {'role': 'system', 'content': system_prompt},
-                {'role': 'user', 'content': user_prompt}
-            ])
-            
-            verified_text = response['message']['content'].strip()
-            
-            # Ensure the verified text has the right format based on is_question
-            if is_question and not verified_text.endswith('?'):
-                verified_text += '?'
-            elif not is_question and verified_text.endswith('?'):
-                verified_text = verified_text[:-1] + '.'
+        response = self.ollama_interface.chat(messages=[
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': user_prompt}
+        ])
+        
+        verified_text = response['message']['content'].strip()
+        
+        # Ensure question mark is present/absent based on is_question
+        if is_question and not verified_text.endswith('?'):
+            verified_text += '?'
+        elif not is_question and verified_text.endswith('?'):
+            verified_text = verified_text[:-1] + '.'
                 
-            return verified_text
+        return verified_text
             
-        except Exception as e:
-            self.logger.error(f"Error verifying paraphrase: {str(e)}")
-            return paraphrased  # Return the unverified paraphrase on error
     
     def clean_generated_content(self, text: str, is_question: bool) -> str:
         """
@@ -526,7 +517,7 @@ class DatasetExpander:
     
     def _perform_advanced_analysis(self, orig_df: pd.DataFrame, expanded_df: pd.DataFrame) -> Dict[str, Any]:
         """
-        Perform advanced analysis using PandasQueryIntegration.
+        Perform advanced analysis using PandasQueryIntegration or OllamaLlamaIndexIntegration.
         
         Args:
             orig_df: DataFrame with original conversations
@@ -540,25 +531,44 @@ class DatasetExpander:
         try:
             # If we have the pandas query integration available
             if self.pandas_query:
-                # Get insights for both datasets
-                orig_insights = self.pandas_query.generate_dataset_insights(orig_df, num_insights=3)
-                expanded_insights = self.pandas_query.generate_dataset_insights(expanded_df, num_insights=3)
-                
-                # Compare the datasets
-                comparison = self.pandas_query.compare_datasets(
-                    orig_df, expanded_df,
-                    df1_name="Original", df2_name="Expanded",
-                    aspects=["shape", "statistics", "distributions"]
-                )
-                
-                analysis_results = {
-                    "original_insights": orig_insights,
-                    "expanded_insights": expanded_insights,
-                    "comparison": comparison
-                }
-                
-            # Otherwise, if we have the Ollama query integration
-            elif self.ollama_query:
+                try:
+                    # Try to use the pandas query integration
+                    orig_insights = self.pandas_query.generate_dataset_insights(orig_df, num_insights=3)
+                    expanded_insights = self.pandas_query.generate_dataset_insights(expanded_df, num_insights=3)
+                    
+                    # Compare the datasets
+                    comparison = self.pandas_query.compare_datasets(
+                        orig_df, expanded_df,
+                        df1_name="Original", df2_name="Expanded",
+                        aspects=["shape", "statistics", "distributions"]
+                    )
+                    
+                    analysis_results = {
+                        "original_insights": orig_insights,
+                        "expanded_insights": expanded_insights,
+                        "comparison": comparison
+                    }
+                    
+                    # Check if there was an API error in the insights
+                    if any("Error code: 401" in insight.get("insight", "") for insight in orig_insights):
+                        # Fall back to Ollama if we encounter API key errors
+                        raise ValueError("API key error detected, falling back to Ollama")
+                    
+                except Exception as e:
+                    self.logger.warning(f"Error using PandasQueryIntegration: {str(e)}. Falling back to OllamaLlamaIndexIntegration.")
+                    # Fall back to Ollama integration
+                    if self.ollama_query is None:
+                        try:
+                            self.ollama_query = OllamaLlamaIndexIntegration(
+                                ollama_model=getattr(self.ollama_interface, 'model', "llama3"),
+                                verbose=True
+                            )
+                            self.logger.info("Created OllamaLlamaIndexIntegration for DataFrame analysis")
+                        except Exception as e2:
+                            self.logger.error(f"Failed to create OllamaLlamaIndexIntegration: {str(e2)}")
+            
+            # Use Ollama query integration if available
+            if self.ollama_query:
                 # Form some basic analysis queries
                 queries = [
                     "Compare the average content length between original and expanded conversations",
@@ -578,10 +588,8 @@ class DatasetExpander:
                     result = self.ollama_query.query_dataframe_with_ollama(combined_df, query)
                     query_results[query] = result
                 
-                analysis_results = {
-                    "ollama_analysis": query_results
-                }
-                
+                analysis_results["ollama_analysis"] = query_results
+                    
         except Exception as e:
             self.logger.error(f"Error performing advanced analysis: {str(e)}")
             analysis_results["error"] = str(e)

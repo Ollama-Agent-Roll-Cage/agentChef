@@ -9,7 +9,7 @@ import random
 # Import OllamaInterface
 from agentChef.ollama_interface import OllamaInterface
 
-# Import OllamaPandasQuery if available
+# Import pandas_query if available
 try:
     from agentChef.pandas_query import OllamaLlamaIndexIntegration
     HAS_QUERY_ENGINE = True

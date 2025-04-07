@@ -16,14 +16,14 @@ Main Components:
 All components use local Ollama models, with no external API dependencies.
 """
 
-__version__ = '0.2.4'
+__version__ = '0.2.6'
 
 # Import main components
 try:
     from .conversation_generator import OllamaConversationGenerator
     from .dataset_expander import DatasetExpander
     from .dataset_cleaner import DatasetCleaner
-    from .pandas_query import OllamaPandasQuery
+    from .pandas_query import PandasQueryIntegration, OllamaLlamaIndexIntegration
     from .udrags import ResearchManager
     from .ollama_interface import OllamaInterface
 except ImportError as e:
@@ -50,7 +50,8 @@ __all__ = [
     'OllamaConversationGenerator',
     'DatasetExpander',
     'DatasetCleaner',
-    'OllamaPandasQuery',
+    'PandasQueryIntegration',
+    'OllamaLlamaIndexIntegration',
     'ResearchManager',
-    'run_ui'
+    'OllamaInterface'
 ]
