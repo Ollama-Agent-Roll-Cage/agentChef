@@ -532,7 +532,7 @@ This approach significantly reduces the boilerplate code needed for dataset crea
 The workflow diagram (shown below) illustrates how data flows through the different phases of the UDRAGS system, from initial research to final dataset analysis.
 
 ```mermaid
-%%{init: {'theme':'dark', 'themeVariables': {'primaryTextColor': '#000000'}}}%%
+%%{init: {'theme':'dark', 'themeVariables': {'primaryTextColor': '#000000', 'nodeTextColor': '#000000'}}}%%
 flowchart TD
     subgraph Research["Research Phase"]
         A[Research Topic] --> B[ArXiv Searcher]
@@ -573,11 +573,11 @@ flowchart TD
         S --- O
     end
     
-    classDef research fill:#bbdefb,stroke:#01579b,stroke-width:2px
-    classDef generation fill:#a5d6a7,stroke:#1b5e20
-    classDef augmentation fill:#ffcc80,stroke:#e65100
-    classDef analysis fill:#ce93d8,stroke:#4a148c
-    classDef tools fill:#cfd8dc,stroke:#424242
+    classDef research fill:#ff7f7f,stroke:#b71c1c,stroke-width:2px
+    classDef generation fill:#ff7f7f,stroke:#b71c1c
+    classDef augmentation fill:#ff7f7f,stroke:#b71c1c
+    classDef analysis fill:#ff7f7f,stroke:#b71c1c
+    classDef tools fill:#ff7f7f,stroke:#b71c1c
 
     class A,B,C,D,E,F research
     class G,H,I generation
