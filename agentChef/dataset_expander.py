@@ -220,15 +220,18 @@ class DatasetExpander:
         
         verified_text = response['message']['content'].strip()
         
-        # Ensure question mark is present/absent based on is_question
-        if is_question and not verified_text.endswith('?'):
+        # Only add question mark if:
+        # 1. This is a question
+        # 2. The verified text doesn't start with "Verified:" (which indicates it's a verification message)
+        # 3. The text doesn't already end with a question mark
+        if is_question and not verified_text.startswith("Verified:") and not verified_text.endswith('?'):
             verified_text += '?'
-        elif not is_question and verified_text.endswith('?'):
+        # If this is not a question but the text ends with a question mark (and it's not a verification message)
+        elif not is_question and not verified_text.startswith("Verified:") and verified_text.endswith('?'):
             verified_text = verified_text[:-1] + '.'
-                
+        
         return verified_text
             
-    
     def clean_generated_content(self, text: str, is_question: bool) -> str:
         """
         Clean generated content by removing explanatory phrases, normalizing punctuation, etc.
