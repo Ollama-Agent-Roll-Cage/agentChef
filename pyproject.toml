@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentChef"
-version = "0.2.6"
+version = "0.2.7"
 description = "Comprehensive toolkit for conversation dataset creation, augmentation, and analysis"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -38,7 +38,8 @@ dependencies = [
     "PyQt6>=6.8.1",
     "requests>=2.32.3",
     "seaborn>=0.13.2",
-    "tqdm>=4.67.1"
+    "tqdm>=4.67.1",
+    "oarc-crawlers>=0.1.2"
 ]
 
 [project.optional-dependencies]
@@ -47,7 +48,8 @@ dev = [
     "isort>=6.0.1",
     "flake8>=7.2.0",
     "pytest>=8.3.5",
-    "twine>=6.1.0"
+    "twine>=6.1.0",
+    "build>=1.2.2.post1"
 ]
 
 [project.urls]

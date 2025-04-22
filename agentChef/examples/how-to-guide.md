@@ -757,88 +757,74 @@ Note: This example requires additional dependencies. If you get import errors, y
 pip install llama-index llama-index-experimental
 ```
 
-## 10. UDRAGS Complete Example
+## 10. UDRAGS Complete Example with oarc-crawlers
+
+The UDRAGS system now leverages the oarc-crawlers package for enhanced research capabilities. Here's an updated example:
 
 ### Create the Script
 
-Create a file named `udrags_example.py`:
+Create a file named `oarc_udrags_example.py`:
 
 ```python
 import asyncio
+from pathlib import Path
 from agentChef.udrags import ResearchManager
 
-async def udrags_example():
+async def oarc_udrags_example():
+    # Create output directory
+    output_dir = Path("./output")
+    output_dir.mkdir(exist_ok=True)
+    
     # Initialize the research manager
-    print("Initializing ResearchManager...")
-    manager = ResearchManager(model_name="llama3")
+    print("Initializing ResearchManager with oarc-crawlers...")
+    manager = ResearchManager(data_dir=str(output_dir), model_name="llama3")
     
     # Define a progress callback function
     def progress_callback(message):
         print(f"Progress: {message}")
     
-    # Step 1: Research a topic
     try:
+        # Step 1: Research a topic using the enhanced crawlers
         print("\nStarting research on transformer neural networks...")
-        print("This comprehensive example may take several minutes to complete...")
         research_results = await manager.research_topic(
             topic="Transformer neural networks",
-            max_papers=1,  # Limit to 1 paper for the example
-            max_search_results=2,  # Limit to 2 search results
-            include_github=False,  # Skip GitHub to speed up the example
+            max_papers=1,
+            max_search_results=2,
             callback=progress_callback
         )
         
-        print("\nResearch completed!")
-        print(f"Found {len(research_results.get('arxiv_papers', []))} ArXiv papers")
-        print(f"Found {len(research_results.get('processed_papers', []))} processed papers")
+        print(f"\nResearch completed! Found {len(research_results.get('processed_papers', []))} papers")
         
-        # Extract a small part of the research summary
-        summary = research_results.get('summary', '')
-        print("\nResearch Summary (excerpt):")
-        print(summary[:300] + "..." if len(summary) > 300 else summary)
-        
-        # Step 2: Generate conversations from research
-        print("\nGenerating conversations from research...")
-        print("This step may take a few minutes...")
+        # Step 2: Generate conversation dataset from research
+        print("\nGenerating conversation dataset...")
         dataset_results = await manager.generate_conversation_dataset(
-            num_turns=2,  # Limit to 2 turns for the example
-            expansion_factor=1,  # Just 1 expansion for the example
+            num_turns=2,
+            expansion_factor=2,
             clean=True,
             callback=progress_callback
         )
         
-        # Print results
-        print("\nDataset Generation Results:")
+        print("\nDataset generation completed!")
         print(f"Generated {len(dataset_results.get('conversations', []))} original conversations")
         print(f"Generated {len(dataset_results.get('expanded_conversations', []))} expanded conversations")
         print(f"Generated {len(dataset_results.get('cleaned_conversations', []))} cleaned conversations")
-        print(f"Output saved to: {dataset_results.get('output_path', 'unknown')}")
         
-        # Print a sample conversation
-        if dataset_results.get('conversations'):
-            conversation = dataset_results['conversations'][0]
-            print("\nSample Conversation:")
-            for turn in conversation:
-                role = "Human" if turn['from'] == 'human' else "AI"
-                print(f"{role}: {turn['value'][:100]}...")
+        print(f"\nOutput saved to: {dataset_results.get('output_path', 'unknown')}")
         
-    except Exception as e:
-        print(f"Error: {str(e)}")
     finally:
-        # Clean up temporary files
-        print("\nCleaning up temporary files...")
+        # Clean up
         manager.cleanup()
-        print("Done!")
+        print("\nCleanup completed")
 
 # Run the example
 if __name__ == "__main__":
-    asyncio.run(udrags_example())
+    asyncio.run(oarc_udrags_example())
 ```
 
 ### Run the Script
 
 ```bash
-python udrags_example.py
+python oarc_udrags_example.py
 ```
 
 ### What to Expect
@@ -854,10 +840,63 @@ You should see:
 
 This complete example demonstrates the full workflow from research to dataset generation, showing how all the components work together. Note that this example may take significantly longer to run than the others due to the multiple steps involved.
 
-## Troubleshooting
+## 11. Using oarc-crawlers Integration
 
-### Common Issues and Solutions
+The agentChef package now integrates with the `oarc-crawlers` package, providing enhanced functionality for crawling and data extraction. This integration includes:
 
-1. **Ollama Not Running**
-   - Error: "Ollama is not available" or connection errors
-   
+- Improved web crawling with BeautifulSoup (BSWebCrawler)
+- Enhanced ArXiv paper fetching (ArxivFetcher)
+- DuckDuckGo search capabilities (DuckDuckGoSearcher)
+- GitHub repository analysis (GitHubCrawler)
+- New YouTube downloading features (YouTubeDownloader)
+- Parquet storage for all data (ParquetStorage)
+
+### Example: Using YouTubeDownloader
+
+Create a file named `youtube_example.py`:
+
+```python
+import asyncio
+from oarc_crawlers import YouTubeDownloader
+
+async def youtube_example():
+    # Initialize the downloader
+    downloader = YouTubeDownloader(data_dir="./data")
+    
+    # Search for videos
+    search_results = await downloader.search_videos("transformer neural networks", limit=3)
+    
+    # Print results
+    if "results" in search_results:
+        for i, video in enumerate(search_results["results"]):
+            print(f"{i+1}. {video['title']} by {video['author']}")
+            print(f"   URL: {video['url']}")
+    
+    # Extract captions from a specific video
+    video_url = "https://www.youtube.com/watch?v=UND34KcVVnM"  # Change to your video
+    captions = await downloader.extract_captions(video_url)
+    
+    # Print caption languages
+    if "captions" in captions:
+        print(f"\nFound captions in {len(captions['captions'])} languages")
+        for lang_code in captions['captions'].keys():
+            print(f"- {lang_code}")
+
+# Run the async function
+asyncio.run(youtube_example())
+```
+
+### Run the Script
+
+```bash
+python youtube_example.py
+```
+
+### What to Expect
+
+You should see:
+1. Search results for videos related to "transformer neural networks"
+2. Details of the videos found, including title, author, and URL
+3. Captions extracted from a specific video, with the languages available
+
+This example demonstrates how to use the YouTubeDownloader from the `oarc-crawlers` package to search for videos and extract captions.

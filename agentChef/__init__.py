@@ -16,7 +16,7 @@ Main Components:
 All components use local Ollama models, with no external API dependencies.
 """
 
-__version__ = '0.2.6'
+__version__ = '0.2.7'
 
 # Import main components
 try:

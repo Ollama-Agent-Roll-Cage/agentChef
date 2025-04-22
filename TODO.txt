@@ -1,9 +1,0 @@
-#augmentation tools todo
-
-1. pandas query engine and research pipeline (ENSURE THIS WORKS)
-
-2. ENSURE CONVERSATION GENERATOR WORKS
-
-3. ENSURE DATASET EXPANDER WORKS
-
-4. ensure dataset cleaner works (DOES IT?)
