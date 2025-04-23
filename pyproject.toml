@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=42", "wheel", "build", "uv", "pip"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -39,7 +39,7 @@ dependencies = [
     "requests>=2.32.3",
     "seaborn>=0.13.2",
     "tqdm>=4.67.1",
-    "oarc-crawlers>=0.1.2"
+    "oarc-crawlers>=0.1.5"
 ]
 
 [project.optional-dependencies]
