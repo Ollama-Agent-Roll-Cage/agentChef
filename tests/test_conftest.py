@@ -18,7 +18,7 @@ from agentChef.conversation_generator import OllamaConversationGenerator
 from agentChef.dataset_expander import DatasetExpander
 from agentChef.dataset_cleaner import DatasetCleaner
 from agentChef.crawlers_module import WebCrawler, ArxivSearcher, DuckDuckGoSearcher, GitHubCrawler
-from agentChef.udrags import ResearchManager
+from agentChef.ragchef import ResearchManager
 
 # Sample test data
 SAMPLE_PAPER_CONTENT = """

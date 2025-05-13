@@ -1,6 +1,6 @@
 # UI Module Documentation
 
-This module provides a simple graphical interface for the UDRAGS system. It offers a user-friendly interface for research, dataset generation, and analysis.
+This module provides a simple graphical interface for the ragchef system. It offers a user-friendly interface for research, dataset generation, and analysis.
 
 ## Class: `WorkerThread`
 
@@ -28,9 +28,9 @@ def run(self)
 
 Run the worker thread.
 
-## Class: `UdragsUI`
+## Class: `RagchefUI`
 
-Main window for the UDRAGS UI.
+Main window for the ragchef UI.
 
 ### Constructor
 
@@ -102,11 +102,11 @@ The UI includes various event handlers for button clicks and other user interact
 
 ## Usage
 
-To use the UI, initialize a ResearchManager and pass it to the UdragsUI class:
+To use the UI, initialize a ResearchManager and pass it to the RagchefUI class:
 
 ```python
-from agentChef.udrags import ResearchManager
-from agentChef.ui_module import UdragsUI
+from agentChef.ragchef import ResearchManager
+from agentChef.ui_module import RagchefUI
 from PyQt6.QtWidgets import QApplication
 import sys
 
@@ -115,7 +115,7 @@ manager = ResearchManager()
 
 # Create the application
 app = QApplication(sys.argv)
-ui = UdragsUI(manager)
+ui = RagchefUI(manager)
 ui.show()
 
 # Run the application

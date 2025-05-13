@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 import pytest
 
-from agentChef.udrags import ResearchManager, OllamaInterface
+from agentChef.ragchef import ResearchManager, OllamaInterface
 from agentChef.conversation_generator import OllamaConversationGenerator
 from agentChef.dataset_expander import DatasetExpander
 from agentChef.dataset_cleaner import DatasetCleaner
@@ -110,7 +110,7 @@ class TestResearchManager(unittest.TestCase):
         self.mock_arxiv.fetch_paper_info.return_value = mock_paper_info
         
         # Mock the arxiv query generation
-        with patch('agentChef.udrags.ollama.chat') as mock_ollama_chat:
+        with patch('agentChef.ragchef.ollama.chat') as mock_ollama_chat:
             mock_ollama_chat.return_value = {
                 'message': {'content': '1. "transformer neural networks"\n2. "attention mechanism"\n3. "self-attention models"'}
             }
@@ -302,9 +302,9 @@ class TestResearchManager(unittest.TestCase):
         self.assertFalse(temp_dir.exists())
 
 class TestOllamaInterface(unittest.TestCase):
-    """Test the simplified OllamaInterface from udrags.py."""
+    """Test the simplified OllamaInterface from ragchef.py."""
     
-    @patch('agentChef.udrags.ollama')
+    @patch('agentChef.ragchef.ollama')
     def test_chat(self, mock_ollama):
         """Test the chat method."""
         # Configure the mock response
@@ -331,12 +331,12 @@ class TestOllamaInterface(unittest.TestCase):
         self.assertEqual(response, mock_response)
 
 class TestEndToEnd(unittest.TestCase):
-    """End-to-end test for the UDRAGS workflow."""
+    """End-to-end test for the ragchef workflow."""
     
-    @patch('agentChef.udrags.ResearchManager.research_topic')
-    @patch('agentChef.udrags.ResearchManager.generate_conversation_dataset')
-    async def test_udrags_workflow(self, mock_generate, mock_research):
-        """Test the full UDRAGS workflow."""
+    @patch('agentChef.ragchef.ResearchManager.research_topic')
+    @patch('agentChef.ragchef.ResearchManager.generate_conversation_dataset')
+    async def test_ragchef_workflow(self, mock_generate, mock_research):
+        """Test the full ragchef workflow."""
         # Configure mock responses
         mock_research.return_value = {
             "topic": "Transformer neural networks",

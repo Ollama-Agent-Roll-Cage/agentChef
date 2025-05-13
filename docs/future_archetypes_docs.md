@@ -1,6 +1,6 @@
 ## Future Archetypes
 
-While UDRAGS provides a comprehensive research-generate-augment-analyze-clean pipeline, we expect users to develop various specialized archetypes as the field evolves:
+While ragchef provides a comprehensive research-generate-augment-analyze-clean pipeline, we expect users to develop various specialized archetypes as the field evolves:
 
 ### 1. Recursive Self-Improvement Pipeline (RSIP)
 
@@ -110,7 +110,7 @@ async def mmcgp_workflow(concept):
 
 ### 5. Conversational Fine-Tuning Data Generator (CFTDG)
 
-A specialized system for generating high-quality fine-tuning data for conversational AI, like UDRAGS:
+A specialized system for generating high-quality fine-tuning data for conversational AI, like ragchef:
 
 ```python
 async def cftdg_workflow(target_domain, target_style, dataset_size=1000):

@@ -1,4 +1,4 @@
-# UDRAGS Documentation
+# ragchef Documentation
 
 U.D.R.A.G.S. (Unified Dataset Research, Augmentation, & Generation System) replaces the previous research modules by leveraging functionality provided in the crawlers_module.py utilities. It provides a complete pipeline for researching topics, converting research papers to conversation format, expanding datasets, and cleaning the expanded datasets.
 
@@ -151,28 +151,28 @@ Request the thread to stop.
 
 ## Command-line Interface
 
-The UDRAGS module provides a comprehensive command-line interface with the following modes:
+The ragchef module provides a comprehensive command-line interface with the following modes:
 
 ### Research Mode
 
 ```bash
-python -m agentChef.udrags --mode research --topic "Your research topic" --max-papers 5 --max-search 10
+python -m agentChef.ragchef --mode research --topic "Your research topic" --max-papers 5 --max-search 10
 ```
 
 ### Generate Mode
 
 ```bash
-python -m agentChef.udrags --mode generate --topic "Your topic" --turns 3 --expand 3 --clean --format jsonl
+python -m agentChef.ragchef --mode generate --topic "Your topic" --turns 3 --expand 3 --clean --format jsonl
 ```
 
 ### Process Mode
 
 ```bash
-python -m agentChef.udrags --mode process --input papers_dir/ --turns 3 --expand 3 --clean --format all
+python -m agentChef.ragchef --mode process --input papers_dir/ --turns 3 --expand 3 --clean --format all
 ```
 
 ### UI Mode (if PyQt6 is installed)
 
 ```bash
-python -m agentChef.udrags --mode ui
+python -m agentChef.ragchef --mode ui
 ```

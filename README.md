@@ -32,7 +32,7 @@ agentChef is a comprehensive Python library for AI research, dataset generation,
   - [Dataset Cleaning](#dataset-cleaning)
   - [Web Crawling and Paper Analysis](#web-crawling-and-paper-analysis)
   - [GitHub Repository Analysis](#github-repository-analysis)
-  - [Using the Unified System (UDRAGS)](#using-the-unified-system-udrags)
+  - [Using the Unified System (ragchef)](#using-the-unified-system-ragchef)
 - [Advanced Usage](#advanced-usage)
   - [Working with Custom Dataset Formats](#working-with-custom-dataset-formats)
   - [Integration with Pandas Query Interface](#integration-with-pandas-query-interface)
@@ -119,7 +119,7 @@ agentChef consists of several core modules:
 - **crawlers_module.py**: Web, ArXiv, and GitHub data collection
 - **ollama_interface.py**: Interface to Ollama models
 - **pandas_query.py**: Natural language querying for pandas DataFrames
-- **udrags.py**: Unified Dataset Research, Augmentation, & Generation System
+- **ragchef.py**: Unified Dataset Research, Augmentation, & Generation Chef
 
 ## Quick Start
 
@@ -173,7 +173,7 @@ The Research and Data Collection module allows you to gather comprehensive infor
 
 ```python
 import asyncio
-from agentChef.udrags import ResearchManager
+from agentChef.ragchef import ResearchManager
 
 async def research_topic():
     # Initialize the research manager
@@ -446,7 +446,7 @@ The GitHub Crawler allows deep analysis of code repositories, providing insights
 
 ```python
 import asyncio
-from agentChef.crawlers_module import GitHubCrawler
+from agentChef.crawlers_module import GHCrawler
 
 async def analyze_github_repo():
     # Initialize the GitHub crawler
@@ -480,13 +480,13 @@ This functionality enables:
 
 This is particularly useful for understanding how concepts are implemented in real-world code or finding examples of specific techniques in open-source projects.
 
-### Using the Unified System (UDRAGS)
+### Using the Unified System (ragchef)
 
-The UDRAGS (Unified Dataset Research, Augmentation, & Generation System) combines all components into a seamless end-to-end pipeline for dataset creation. It manages the entire workflow from initial research to final cleaned dataset.
+The ragchef (Unified Dataset Research, Augmentation, & Generation System) combines all components into a seamless end-to-end pipeline for dataset creation. It manages the entire workflow from initial research to final cleaned dataset.
 
 ```python
 import asyncio
-from agentChef.udrags import ResearchManager
+from agentChef.ragchef import ResearchManager
 
 async def unified_research_and_generation():
     # Initialize the research manager
@@ -529,7 +529,7 @@ The unified system provides:
 4. Consolidated output in multiple formats
 
 This approach significantly reduces the boilerplate code needed for dataset creation while ensuring consistent quality through each stage of the pipeline.
-The workflow diagram (shown below) illustrates how data flows through the different phases of the UDRAGS system, from initial research to final dataset analysis.
+The workflow diagram (shown below) illustrates how data flows through the different phases of the ragchef system, from initial research to final dataset analysis.
 
 ```mermaid
 %%{init: {'theme':'dark', 'themeVariables': {'primaryTextColor': '#000000', 'nodeTextColor': '#000000'}}}%%
@@ -676,37 +676,37 @@ except ImportError:
 
 ## Command-line Interface
 
-agentChef provides a comprehensive command-line interface through the `udrags.py` module:
+agentChef provides a comprehensive command-line interface through the `ragchef.py` module:
 
 ### Research Mode
 
 ```bash
-python -m agentChef.udrags --mode research --topic "Transformer neural networks" --max-papers 5 --max-search 10
+python -m agentChef.ragchef --mode research --topic "Transformer neural networks" --max-papers 5 --max-search 10
 ```
 
 ### Generate Mode
 
 ```bash
-python -m agentChef.udrags --mode generate --topic "Transformer neural networks" --turns 3 --expand 3 --clean --format jsonl
+python -m agentChef.ragchef --mode generate --topic "Transformer neural networks" --turns 3 --expand 3 --clean --format jsonl
 ```
 
 ### Process Mode
 
 ```bash
-python -m agentChef.udrags --mode process --input papers_dir/ --turns 3 --expand 3 --clean --format all
+python -m agentChef.ragchef --mode process --input papers_dir/ --turns 3 --expand 3 --clean --format all
 ```
 
 ### UI Mode (if PyQt6 is installed)
 
 ```bash
-python -m agentChef.udrags --mode ui
+python -m agentChef.ragchef --mode ui
 ```
 
 ## Building Custom Workflows
 
-agentChef is designed to be modular, allowing you to build custom workflows by combining different components. The UDRAGS system (Unified Dataset Research, Augmentation, & Generation System) itself is an example of a custom workflow built on top of agentChef's core components.
+agentChef is designed to be modular, allowing you to build custom workflows by combining different components. The ragchef system (Unified Dataset Research, Augmentation, & Generation System) itself is an example of a custom workflow built on top of agentChef's core components.
 
-Here's an example of how you can create your own research-generate-augment-analyze-clean pipeline, mirroring the UDRAGS approach:
+Here's an example of how you can create your own research-generate-augment-analyze-clean pipeline, mirroring the ragchef approach:
 
 ### 1. Research Phase
 
@@ -937,13 +937,13 @@ cleaning_results = asyncio.run(cleaning_phase(augmentation_results, analysis_res
 
 ### 6. Putting It All Together
 
-Combine these five phases into a complete UDRAGS-style workflow:
+Combine these five phases into a complete ragchef-style workflow:
 
 ```python
 import asyncio
 
-async def custom_udrags_workflow(topic):
-    print(f"Starting custom UDRAGS workflow for topic: {topic}")
+async def custom_ragchef_workflow(topic):
+    print(f"Starting custom ragchef workflow for topic: {topic}")
     
     # Phase 1: Research
     print("\n=== RESEARCH PHASE ===")
@@ -974,10 +974,10 @@ async def custom_udrags_workflow(topic):
     }
 
 # Run the complete workflow
-workflow_results = asyncio.run(custom_udrags_workflow("attention mechanisms in neural networks"))
+workflow_results = asyncio.run(custom_ragchef_workflow("attention mechanisms in neural networks"))
 ```
 
-This custom workflow demonstrates how you can combine agentChef's components to create a specialized pipeline following the UDRAGS approach: research-generate-augment-analyze-clean. Each phase builds on the previous one, creating a comprehensive system for dataset generation and processing that mirrors the core functionality of the built-in UDRAGS system.
+This custom workflow demonstrates how you can combine agentChef's components to create a specialized pipeline following the ragchef approach: research-generate-augment-analyze-clean. Each phase builds on the previous one, creating a comprehensive system for dataset generation and processing that mirrors the core functionality of the built-in ragchef system.
 
 You can adapt this pattern to create workflows for your specific needs, focusing on any part of the pipeline or extending it with additional processing steps.
 
@@ -991,7 +991,7 @@ agentChef/
 ├── README.md
 ├── agentChef/
 │   ├── __init__.py
-│   ├── udrags.py
+│   ├── ragchef.py
 │   ├── conversation_generator.py
 │   ├── dataset_expander.py
 │   ├── dataset_cleaner.py
@@ -1018,7 +1018,7 @@ Apache 2.0
 
 ## Acknowledgments
 
-Agent Chef builds upon the UDRAGS framework and integrates with several open-source projects:
+Agent Chef builds upon the ragchef framework and integrates with several open-source projects:
 - Ollama for local LLM access
 - LlamaIndex for natural language querying of structured data
 - PyQt6 for the graphical user interface

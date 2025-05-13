@@ -19,7 +19,7 @@ tests/
 │   ├── test_arxiv_searcher.py     # Tests for ArXiv searcher
 │   ├── test_duckduckgo_searcher.py # Tests for DuckDuckGo searcher
 │   └── test_github_crawler.py     # Tests for GitHub crawler
-├── test_udrags.py                 # Integration tests for UDRAGS system
+├── test_ragchef.py                 # Integration tests for ragchef system
 └── test_end_to_end.py             # End-to-end workflow tests
 ```
 
@@ -63,8 +63,8 @@ pytest tests/test_conversation_generator.py
 # Test dataset expander
 pytest tests/test_dataset_expander.py
 
-# Test UDRAGS integration
-pytest tests/test_udrags.py
+# Test ragchef integration
+pytest tests/test_ragchef.py
 ```
 
 ### Running tests with coverage

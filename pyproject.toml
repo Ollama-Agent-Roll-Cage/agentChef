@@ -39,7 +39,8 @@ dependencies = [
     "requests>=2.32.3",
     "seaborn>=0.13.2",
     "tqdm>=4.67.1",
-    "oarc-crawlers>=0.1.5"
+    "oarc-crawlers>=0.1.5",
+    "PyQt6-WebEngine>=6.4.0"
 ]
 
 [project.optional-dependencies]
@@ -58,7 +59,7 @@ dev = [
 "Documentation" = "https://github.com/Leoleojames1/agentChef/blob/main/README.md"
 
 [project.scripts]
-agentchef = "agentChef.udrags:main"
+agentchef = "agentChef.ragchef:main"
 
 [tool.setuptools]
 packages = ["agentChef"]

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines a testing strategy for the agentChef library, with tests for each module and integrated UDRAGS testing.
+This document outlines a testing strategy for the agentChef library, with tests for each module and integrated ragchef testing.
 
 ## Testing Approach
 
@@ -31,7 +31,7 @@ tests/
 │   ├── test_arxiv_searcher.py
 │   ├── test_duckduckgo_searcher.py
 │   └── test_github_crawler.py
-├── test_udrags.py                 # Integration tests for the unified system
+├── test_ragchef.py                 # Integration tests for the unified system
 └── test_end_to_end.py             # End-to-end workflow tests
 ```
 
