@@ -7,7 +7,7 @@ import pandas as pd
 import random
 
 # Import OllamaInterface
-from agentChef.ollama_interface import OllamaInterface
+from ollama_interface import OllamaInterface
 
 # Import pandas_query if available
 try:
@@ -468,6 +468,17 @@ class OllamaConversationGenerator:
         except Exception as e:
             self.logger.error(f"Error generating hedged response: {str(e)}")
             return f"I apologize, but I couldn't generate a response due to an error: {str(e)}"
+    
+    def set_model(self, model_name: str):
+        """Update the model used for generation."""
+        self.model = model_name
+        if self.ollama:
+            self.ollama.set_model(model_name)
+        self.logger.info(f"Set conversation generator model to: {model_name}")
+        
+        # Update query engine if it exists
+        if self.query_engine and hasattr(self.query_engine, 'set_model'):
+            self.query_engine.set_model(model_name)
 
 
 # Example usage:

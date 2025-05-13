@@ -63,6 +63,16 @@ class DatasetExpander:
                 except ImportError:
                     self.logger.warning("Neither LlamaIndex nor Ollama are available for advanced DataFrame querying")
     
+    def set_model(self, model_name: str):
+        """Update the model used for dataset expansion."""
+        if self.ollama_interface:
+            self.ollama_interface.set_model(model_name)
+        self.logger.info(f"Set dataset expander model to: {model_name}")
+        
+        # Update query engine if available
+        if self.ollama_query:
+            self.ollama_query.set_model(model_name)
+
     def expand_conversation_dataset(self, 
                                   conversations: List[List[Dict[str, str]]], 
                                   expansion_factor: int = 3,

@@ -1,15 +1,15 @@
-"""Example demonstrating UDRAGS with the new oarc-crawlers integration."""
+"""Example demonstrating ragchef with the new oarc-crawlers integration."""
 
 import asyncio
 import logging
 from pathlib import Path
-from agentChef.udrags import ResearchManager
+from agentChef.ragchef import ResearchManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def oarc_udrags_example():
-    """Demonstrate a complete UDRAGS workflow with oarc-crawlers."""
+async def oarc_ragchef_example():
+    """Demonstrate a complete ragchef workflow with oarc-crawlers."""
     
     # Create output directory if it doesn't exist
     output_dir = Path("./output")
@@ -71,4 +71,4 @@ async def oarc_udrags_example():
         print("\nCleanup completed")
 
 if __name__ == "__main__":
-    asyncio.run(oarc_udrags_example())
+    asyncio.run(oarc_ragchef_example())

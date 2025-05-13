@@ -16,16 +16,18 @@ import os
 import re
 import logging
 import json
+import random  # Add this import
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, List, Optional, Union, Tuple, Any
 from datetime import datetime, UTC
+import asyncio
 
 # Import oarc-crawlers components
 from oarc_crawlers import (
-    BSWebCrawler,
-    ArxivFetcher, 
-    DuckDuckGoSearcher as OARCDuckDuckGoSearcher,
-    GitHubCrawler as OARCGitHubCrawler,
+    WebCrawler,
+    ArxivCrawler, 
+    DDGCrawler,
+    GHCrawler,
     ParquetStorage
 )
 
@@ -35,15 +37,15 @@ DATA_DIR = os.getenv('DATA_DIR', 'data')
 # Initialize logging
 logger = logging.getLogger(__name__)
 
-class WebCrawler:
+class WebCrawlerWrapper:
     """Class for crawling web pages and extracting content.
     
-    This is a wrapper around the oarc-crawlers BSWebCrawler class.
+    This is a wrapper around the oarc-crawlers WebCrawler class.
     """
     
     def __init__(self):
         """Initialize the web crawler with the data directory."""
-        self.crawler = BSWebCrawler(data_dir=DATA_DIR)
+        self.crawler = WebCrawler(data_dir=DATA_DIR)
         
     async def fetch_url_content(self, url):
         """Fetch content from a URL.
@@ -97,12 +99,13 @@ class WebCrawler:
 class ArxivSearcher:
     """Class for searching and retrieving ArXiv papers.
     
-    This is a wrapper around the oarc-crawlers ArxivFetcher class.
+    This is a wrapper around the oarc-crawlers ArxivCrawler class.
     """
     
     def __init__(self):
         """Initialize the ArXiv searcher with the data directory."""
-        self.fetcher = ArxivFetcher(data_dir=DATA_DIR)
+        self.fetcher = ArxivCrawler(data_dir=DATA_DIR)
+        self.rate_limit_delay = 3  # seconds between requests
     
     @staticmethod
     def extract_arxiv_id(url_or_id):
@@ -117,7 +120,7 @@ class ArxivSearcher:
         Raises:
             ValueError: If ID cannot be extracted
         """
-        return ArxivFetcher.extract_arxiv_id(url_or_id)
+        return ArxivCrawler.extract_arxiv_id(url_or_id)
 
     async def fetch_paper_info(self, arxiv_id):
         """Fetch paper metadata from arXiv API.
@@ -170,29 +173,140 @@ class ArxivSearcher:
             
         return formatted_text
 
+    async def search(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+        """Old search method for backward compatibility."""
+        return await self.search_papers(query, max_results=max_results)
+        
+    async def search_papers(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+        """
+        Search ArXiv for papers matching the query.
+        
+        Args:
+            query: Search query
+            max_results: Maximum number of results to return
+            
+        Returns:
+            List of paper metadata dictionaries
+        """
+        try:
+            papers = []
+            # The search method returns a dict not an async iterator
+            search_results = await self.fetcher.search(query, limit=max_results)
+            
+            # Process the results which should be in a list or similar structure
+            for paper in search_results.get('results', []):
+                papers.append({
+                    'title': paper.get('title', ''),
+                    'authors': paper.get('authors', []),
+                    'abstract': paper.get('abstract', ''),
+                    'categories': paper.get('categories', []),
+                    'arxiv_url': paper.get('arxiv_url', ''),
+                    'pdf_link': paper.get('pdf_link', ''),
+                    'published': paper.get('published', ''),
+                    'updated': paper.get('updated', ''),
+                    'arxiv_id': paper.get('arxiv_id', '')
+                })
+                
+                if len(papers) >= max_results:
+                    break
+                
+                # Add rate limiting delay
+                await asyncio.sleep(self.rate_limit_delay)
+            
+            return papers
+            
+        except Exception as e:
+            logger.error(f"Error searching ArXiv: {str(e)}")
+            return []
+
+
+# Update DuckDuckGo imports
+try:
+    from duckduckgo_search import DDGS
+    HAS_DDG = True
+except ImportError:
+    HAS_DDG = False
+    logging.warning("DuckDuckGo search not available. Install with 'pip install -U duckduckgo-search'")
 
 class DuckDuckGoSearcher:
-    """Class for performing searches using DuckDuckGo API.
-    
-    This is a wrapper around the oarc-crawlers DuckDuckGoSearcher class.
-    """
+    """Class for performing searches using DuckDuckGo API."""
     
     def __init__(self):
         """Initialize the DuckDuckGo searcher with the data directory."""
-        self.searcher = OARCDuckDuckGoSearcher(data_dir=DATA_DIR)
+        self.searcher = DDGCrawler(data_dir=DATA_DIR)
+        self.rate_limit_delay = 20  # Increase initial delay to 20 seconds
+        self.max_retries = 3  # Reduce max retries to avoid excessive attempts
+        self.retry_backoff = 3  # More aggressive backoff multiplier
+        self.session = None  # Will store DDGS session
     
     async def text_search(self, search_query, max_results=5):
-        """Perform an async text search using DuckDuckGo.
+        """Perform an async text search using DuckDuckGo."""
+        if not HAS_DDG:
+            return [{
+                "title": "Search Unavailable",
+                "link": "",
+                "snippet": "DuckDuckGo search package not installed. Install with: pip install -U duckduckgo-search"
+            }]
         
-        Args:
-            search_query (str): Query to search for
-            max_results (int): Maximum number of results to return
-            
-        Returns:
-            str: Formatted search results in markdown
-        """
-        return await self.searcher.text_search(search_query, max_results=max_results)
-
+        # Initialize session if needed
+        if self.session is None:
+            self.session = DDGS()
+            # Add random user agent rotation
+            self.session.headers.update({
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            })
+        
+        current_delay = self.rate_limit_delay
+        results = []
+        
+        for attempt in range(self.max_retries):
+            try:
+                # Add random delay component
+                random_delay = current_delay * (0.5 + random.random())
+                await asyncio.sleep(random_delay)
+                
+                # Use a with statement for proper session handling
+                with self.session as ddgs:
+                    ddgs.timeout = 60  # Increase timeout
+                    
+                    # Try text search first
+                    try:
+                        for r in ddgs.text(search_query, max_results=max_results):
+                            results.append({
+                                "title": r.get("title", ""),
+                                "link": r.get("link", ""),
+                                "snippet": r.get("body", "")
+                            })
+                            # Add random delay between results
+                            await asyncio.sleep(2 + random.random() * 3)
+                            
+                            if len(results) >= max_results:
+                                return results
+                                
+                    except Exception as e:
+                        if "202 Ratelimit" in str(e):
+                            # Close and recreate session on rate limit
+                            self.session = DDGS()
+                            current_delay *= self.retry_backoff
+                            continue
+                        raise
+                        
+                # If we got here with results, return them
+                if results:
+                    return results
+                    
+                current_delay *= self.retry_backoff
+                    
+            except Exception as e:
+                logger.error(f"Error performing DuckDuckGo search (attempt {attempt + 1}/{self.max_retries}): {e}")
+                current_delay *= self.retry_backoff
+                
+        # If all retries failed, return error result
+        return [{
+            "title": "Search Error",
+            "link": "",
+            "snippet": f"DuckDuckGo search failed after {self.max_retries} attempts due to rate limiting. Please try again later."
+        }]
 
 class GitHubCrawler:
     """Class for crawling and extracting content from GitHub repositories.
@@ -207,7 +321,7 @@ class GitHubCrawler:
             data_dir (str, optional): Directory to store data. Defaults to DATA_DIR.
         """
         self.data_dir = data_dir or DATA_DIR
-        self.crawler = OARCGitHubCrawler(data_dir=self.data_dir)
+        self.crawler = GHCrawler(data_dir=self.data_dir)  # Fixed class name
         self.github_data_dir = Path(f"{self.data_dir}/github_repos")
         self.github_data_dir.mkdir(parents=True, exist_ok=True)
         self.logger = logging.getLogger(__name__)
@@ -225,7 +339,7 @@ class GitHubCrawler:
         Raises:
             ValueError: If URL is not a valid GitHub repository URL
         """
-        return OARCGitHubCrawler.extract_repo_info_from_url(url)
+        return GHCrawler.extract_repo_info_from_url(url)
 
     def get_repo_dir_path(self, owner: str, repo_name: str) -> Path:
         """Get the directory path for storing repository data.

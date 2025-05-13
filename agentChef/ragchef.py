@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-"""udrags.py
-U.D.R.A.G.S. Unified Dataset Research, Augmentation, & Generation System
-
-#TODO rename to delegator for each research manager
+"""ragchef.py
+R.A.G.C.H.E.F. Research, Augmentation, & Generation, Chef
 
 This module replaces the previous research_thread.py, research_ui.py, and research_utils.py
 by leveraging the functionality provided in the crawlers_module.py utilities.
@@ -14,8 +12,8 @@ It provides a complete pipeline for:
 4. Cleaning and validating the expanded datasets
 
 Usage:
-    python -m agentChef.udrags --topic "Your research topic" --mode research
-    python -m agentChef.udrags --input papers_dir/ --mode generate --expand 3 --clean
+    python -m agentChef.ragchef --topic "Your research topic" --mode research
+    python -m agentChef.ragchef --input papers_dir/ --mode generate --expand 3 --clean
 
 Author: @Borcherdingl
 Date: 04/04/2025
@@ -23,6 +21,7 @@ Date: 04/04/2025
 
 import os
 import sys
+import re  # Add missing import
 import shutil
 import json
 import logging
@@ -41,17 +40,18 @@ except ImportError:
     logging.warning("Ollama not available. Some features will be disabled.")
 
 # Import crawler modules
-from agentChef.crawlers_module import (
-    WebCrawler, 
+from crawlers_module import (
+    WebCrawlerWrapper, 
     ArxivSearcher, 
     DuckDuckGoSearcher, 
     GitHubCrawler
 )
 
 # Import data processing modules
-from agentChef.conversation_generator import OllamaConversationGenerator
-from agentChef.dataset_expander import DatasetExpander
-from agentChef.dataset_cleaner import DatasetCleaner
+from conversation_generator import OllamaConversationGenerator
+from dataset_expander import DatasetExpander
+from dataset_cleaner import DatasetCleaner
+from ollama_interface import OllamaInterface  # Add this import
 
 # Optional UI imports - only imported if UI mode is selected
 try:
@@ -107,7 +107,7 @@ class ResearchManager:
             directory.mkdir(exist_ok=True, parents=True)
         
         # Initialize components
-        self.web_crawler = WebCrawler()
+        self.web_crawler = WebCrawlerWrapper()
         self.arxiv_searcher = ArxivSearcher()
         self.ddg_searcher = DuckDuckGoSearcher()
         self.github_crawler = GitHubCrawler(data_dir=str(self.data_dir))
@@ -140,24 +140,21 @@ class ResearchManager:
         }
     
     async def research_topic(self, topic, max_papers=5, max_search_results=10, 
-                           include_github=False, github_repos=None, callback=None):
-        """
-        Research a topic using ArXiv, web search, and optionally GitHub.
-        
-        Args:
-            topic: Research topic to investigate
-            max_papers: Maximum number of papers to process
-            max_search_results: Maximum number of web search results
-            include_github: Whether to include GitHub repositories
-            github_repos: Optional list of GitHub repositories to include
-            callback: Optional callback function for progress updates
-            
-        Returns:
-            Dictionary with research results
-        """
+                           include_github=False, github_repos=None, callback=None,
+                           model_name=None):  # Add model_name parameter
+        """Research a topic using ArXiv, web search, and optionally GitHub."""
+        # Update model if provided
+        if model_name:
+            self.model_name = model_name
+            # Update model for components that need it
+            if HAS_OLLAMA:
+                self.ollama_interface.set_model(model_name)
+                self.conversation_generator.set_model(model_name)
+                self.dataset_expander.set_model(model_name)
+                self.dataset_cleaner.set_model(model_name)
+
         self.research_state["topic"] = topic
         
-        # Helper function for progress updates
         def update_progress(message):
             logger.info(message)
             if callback:
@@ -165,40 +162,44 @@ class ResearchManager:
         
         update_progress(f"Starting research on: {topic}")
         
-        # 1. Generate search queries for ArXiv
-        arxiv_queries = await self._generate_arxiv_queries(topic)
-        update_progress(f"Generated ArXiv queries: {', '.join(arxiv_queries)}")
-        
-        # 2. Search ArXiv papers
-        arxiv_papers = []
-        for query in arxiv_queries:
-            update_progress(f"Searching ArXiv for: {query}")
-            try:
-                paper_info = await self.arxiv_searcher.fetch_paper_info(query)
-                arxiv_papers.append(paper_info)
-            except Exception as e:
-                update_progress(f"Error searching ArXiv: {str(e)}")
-        
-        # Limit number of papers
-        arxiv_papers = arxiv_papers[:max_papers]
-        self.research_state["arxiv_papers"] = arxiv_papers
-        update_progress(f"Found {len(arxiv_papers)} relevant ArXiv papers")
-        
-        # 3. Format paper information
-        formatted_papers = []
-        for paper in arxiv_papers:
-            update_progress(f"Processing paper: {paper['title']}")
-            formatted_info = await self.arxiv_searcher.format_paper_for_learning(paper)
-            formatted_papers.append({
-                "paper_info": paper,
-                "formatted_info": formatted_info
-            })
-        
-        self.research_state["processed_papers"] = formatted_papers
-        
-        # 4. Perform web search
+        # Simplified ArXiv search query
+        try:
+            update_progress(f"Searching ArXiv for: {topic}")
+            # Use basic topic search instead of complex queries
+            paper_info = await self.arxiv_searcher.search_papers(topic, max_results=max_papers)
+            arxiv_papers = paper_info if paper_info else []
+            
+            self.research_state["arxiv_papers"] = arxiv_papers
+            update_progress(f"Found {len(arxiv_papers)} relevant ArXiv papers")
+            
+            # Format paper information
+            formatted_papers = []
+            for paper in arxiv_papers:
+                update_progress(f"Processing paper: {paper.get('title', 'Unknown')}")
+                formatted_info = await self.arxiv_searcher.format_paper_for_learning(paper)
+                formatted_papers.append({
+                    "paper_info": paper,
+                    "formatted_info": formatted_info
+                })
+            
+            self.research_state["processed_papers"] = formatted_papers
+            
+        except Exception as e:
+            update_progress(f"Error searching ArXiv: {str(e)}")
+            arxiv_papers = []
+            formatted_papers = []
+
+        # 4. Perform web search with fallback
         update_progress(f"Performing web search for: {topic}")
-        search_results = await self.ddg_searcher.text_search(topic, max_results=max_search_results)
+        try:
+            search_results = await self.ddg_searcher.text_search(topic, max_results=max_search_results)
+        except Exception as e:
+            update_progress(f"Web search failed, using basic results: {str(e)}")
+            search_results = [{
+                "title": "Web search unavailable",
+                "link": "",
+                "snippet": "Web search functionality is currently unavailable. Please try again later."
+            }]
         self.research_state["search_results"] = search_results
         
         # 5. Process GitHub repositories if requested
@@ -500,32 +501,64 @@ class ResearchManager:
     def _generate_research_summary(self):
         """Generate a summary of the research results."""
         # Count items in each category
-        arxiv_count = len(self.research_state.get("arxiv_papers", []))
-        search_count = len(self.research_state.get("search_results", []))
-        github_count = len(self.research_state.get("github_repos", []))
+        arxiv_papers = self.research_state.get("arxiv_papers", [])
+        search_results = self.research_state.get("search_results", [])
+        github_repos = self.research_state.get("github_repos", [])
         
-        # Generate a summary
-        summary = f"""
-        # Research Summary: {self.research_state.get('topic', 'Unknown Topic')}
+        # Generate a summary with more details
+        summary = f"""# Research Summary: {self.research_state.get('topic', 'Unknown Topic')}
+
+## Overview
+- Total ArXiv Papers Found: {len(arxiv_papers)}
+- Total Web Search Results: {len(search_results)}
+- Total GitHub Repositories: {len(github_repos)}
+
+## ArXiv Papers
+"""
         
-        ## Data Sources
-        - ArXiv Papers: {arxiv_count}
-        - Web Search Results: {search_count}
-        - GitHub Repositories: {github_count}
+        # Add detailed paper information
+        for i, paper in enumerate(arxiv_papers[:5], 1):
+            if isinstance(paper, dict):
+                title = paper.get('title', 'Unknown Title').strip()
+                authors = paper.get('authors', ['Unknown'])
+                arxiv_id = paper.get('arxiv_id', 'N/A')
+                categories = paper.get('categories', [])
+                published = paper.get('published', '')[:10] if paper.get('published') else 'N/A'
+                
+                summary += f"\n{i}. **{title}**\n"
+                summary += f"   - Authors: {', '.join(authors)}\n"
+                summary += f"   - ArXiv ID: {arxiv_id}\n"
+                summary += f"   - Categories: {', '.join(categories)}\n"
+                summary += f"   - Published: {published}\n"
+                
+                # Add abstract preview if available
+                abstract = paper.get('abstract', '')
+                if abstract:
+                    preview = abstract[:200] + "..." if len(abstract) > 200 else abstract
+                    summary += f"   - Preview: {preview}\n"
         
-        ## Top Papers
-        """
+        # Add web search results if any
+        if search_results:
+            summary += "\n## Top Web Results\n"
+            for i, result in enumerate(search_results[:3], 1):
+                title = result.get('title', 'Untitled').strip()
+                link = result.get('link', '')
+                summary += f"\n{i}. [{title}]({link})\n"
         
-        # Add top papers
-        for i, paper in enumerate(self.research_state.get("processed_papers", [])[:3]):
-            if "paper_info" in paper:
-                info = paper["paper_info"]
-                summary += f"\n{i+1}. **{info.get('title', 'Unknown Title')}**\n"
-                summary += f"   Authors: {', '.join(info.get('authors', ['Unknown']))}\n"
-                summary += f"   ArXiv ID: {info.get('arxiv_id', 'Unknown')}\n"
+        # Add GitHub repositories if any
+        if github_repos:
+            summary += "\n## GitHub Repositories\n"
+            for i, repo in enumerate(github_repos, 1):
+                repo_url = repo.get('repo_url', '')
+                repo_summary = repo.get('summary', 'No summary available')
+                summary += f"\n{i}. [{repo_url}]({repo_url})\n"
+                summary += f"   {repo_summary}\n"
         
-        # Add timestamp
-        summary += f"\n\nResearch completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        # Add research statistics
+        summary += "\n## Research Statistics\n"
+        summary += f"- Research Topic: {self.research_state.get('topic', 'Unknown')}\n"
+        summary += f"- Total Results: {len(arxiv_papers) + len(search_results) + len(github_repos)}\n"
+        summary += f"- Research Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
         
         return summary
     
@@ -537,32 +570,6 @@ class ResearchManager:
                 logger.info(f"Cleaned up temporary directory: {self.temp_dir}")
         except Exception as e:
             logger.error(f"Error cleaning up: {str(e)}")
-
-
-class OllamaInterface:
-    """Simple interface for Ollama API."""
-    
-    def __init__(self, model_name="llama3"):
-        """
-        Initialize the Ollama interface.
-        
-        Args:
-            model_name: Name of the Ollama model to use
-        """
-        self.model = model_name
-    
-    def chat(self, messages):
-        """
-        Send messages to the Ollama chat API.
-        
-        Args:
-            messages: List of message objects with 'role' and 'content'
-            
-        Returns:
-            Response from Ollama API
-        """
-        return ollama.chat(model=self.model, messages=messages)
-
 
 class ResearchThread(QThread):
     """Thread for running research operations in the background (for UI mode)."""
@@ -634,32 +641,57 @@ def main():
     parser = argparse.ArgumentParser(description="Unified Research and Dataset Generation System")
     
     # Mode selection
-    parser.add_argument("--mode", type=str, choices=['research', 'generate', 'process', 'ui'],
+    parser.add_argument("--mode", type=str, choices=['research', 'generate', 'process', 'analyze', 'ui'],
                        default='research', help="Operation mode")
     
     # Research mode arguments
-    parser.add_argument("--topic", type=str, help="Research topic")
-    parser.add_argument("--max-papers", type=int, default=5,
-                       help="Maximum number of papers to process")
-    parser.add_argument("--max-search", type=int, default=10,
-                       help="Maximum number of web search results")
-    parser.add_argument("--include-github", action="store_true",
-                       help="Include GitHub repositories")
-    parser.add_argument("--github-repos", type=str, nargs='+',
-                       help="GitHub repository URLs to include")
+    research_group = parser.add_argument_group("Research Options")
+    research_group.add_argument("--topic", type=str, help="Research topic")
+    research_group.add_argument("--max-papers", type=int, default=5,
+                              help="Maximum number of papers to process")
+    research_group.add_argument("--max-search", type=int, default=10,
+                              help="Maximum number of web search results")
+    research_group.add_argument("--include-github", action="store_true",
+                              help="Include GitHub repositories")
+    research_group.add_argument("--github-repos", type=str, nargs='+',
+                              help="GitHub repository URLs to include")
+    research_group.add_argument("--save-research", type=str,
+                              help="Path to save research results")
     
     # Generate/process mode arguments
-    parser.add_argument("--input", type=str, help="Input papers directory or file list")
-    parser.add_argument("--turns", type=int, default=3,
-                       help="Number of turns in generated conversations")
-    parser.add_argument("--expand", type=int, default=3,
-                       help="Dataset expansion factor")
-    parser.add_argument("--clean", action="store_true", default=True,
-                       help="Clean the expanded dataset")
-    parser.add_argument("--format", type=str, choices=['jsonl', 'parquet', 'csv', 'all'],
-                       default='jsonl', help="Output format")
+    generate_group = parser.add_argument_group("Generation Options")
+    generate_group.add_argument("--input", type=str, help="Input papers directory or file list")
+    generate_group.add_argument("--turns", type=int, default=3,
+                              help="Number of turns in generated conversations")
+    generate_group.add_argument("--expand", type=int, default=3,
+                              help="Dataset expansion factor")
+    generate_group.add_argument("--clean", action="store_true", default=True,
+                              help="Clean the expanded dataset")
+    generate_group.add_argument("--hedging", type=str, choices=['confident', 'balanced', 'cautious'],
+                              default='balanced', help="Hedging level for responses")
+    generate_group.add_argument("--static-human", action="store_true",
+                              help="Keep human messages static")
+    generate_group.add_argument("--static-gpt", action="store_true",
+                              help="Keep GPT messages static")
+    
+    # Analysis mode arguments
+    analyze_group = parser.add_argument_group("Analysis Options")
+    analyze_group.add_argument("--orig-dataset", type=str,
+                             help="Path to original dataset for analysis")
+    analyze_group.add_argument("--exp-dataset", type=str,
+                             help="Path to expanded dataset for analysis")
+    analyze_group.add_argument("--analysis-output", type=str,
+                             help="Path to save analysis results")
+    analyze_group.add_argument("--basic-stats", action="store_true",
+                             help="Include basic statistics in analysis")
+    analyze_group.add_argument("--quality", action="store_true",
+                             help="Include quality analysis")
+    analyze_group.add_argument("--comparison", action="store_true",
+                             help="Include dataset comparison")
     
     # Common arguments
+    parser.add_argument("--format", type=str, choices=['jsonl', 'parquet', 'csv', 'all'],
+                       default='jsonl', help="Output format")
     parser.add_argument("--model", type=str, default="llama3",
                        help="Ollama model to use")
     parser.add_argument("--output-dir", type=str, default=DEFAULT_DATA_DIR,
@@ -678,10 +710,10 @@ def main():
             return 1
         
         # Import UI classes here to avoid dependency if not needed
-        from research_ui import ResearchUI
+        from ui_module import RagchefUI
         
         app = QApplication(sys.argv)
-        ui = ResearchUI(manager)
+        ui = RagchefUI(manager)
         ui.show()
         return app.exec()
     
@@ -857,34 +889,35 @@ def main():
     
     return 0
 
-
-# Simple UI class that could be imported for UI mode
-if HAS_QT:
-    class ResearchUI(QMainWindow):
-        """Simple UI for the research system."""
-        
-        def __init__(self, manager):
-            """
-            Initialize the UI.
-            
-            Args:
-                manager: ResearchManager instance
-            """
-            super().__init__()
-            self.manager = manager
-            self.research_thread = None
-            
-            self.setWindowTitle("Research and Dataset Generation System")
-            self.setMinimumSize(800, 600)
-            
-            # UI setup would go here...
-            # This is a placeholder for a real UI implementation
-            
-            print("UI mode is not fully implemented in this version")
-            QMessageBox.information(self, "UI Mode", 
-                                   "UI mode is not fully implemented in this version. "
-                                   "Please use the command-line interface instead.")
-
-
 if __name__ == "__main__":
     sys.exit(main())
+
+# Add new ArXiv search method to ArxivSearcher class
+class ArxivSearcher:
+    """Class for searching and retrieving ArXiv papers."""
+    
+    async def search_papers(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+        """
+        Search ArXiv for papers matching the query.
+        
+        Args:
+            query: Search query
+            max_results: Maximum number of results to return
+            
+        Returns:
+            List of paper metadata dictionaries
+        """
+        try:
+            # Convert the query to a simple search format
+            search_query = query.replace(' AND ', ' ').replace(' OR ', ' ')
+            search_query = re.sub(r'[()"]', '', search_query)
+            
+            # Use the underlying arXiv API through oarc_crawlers
+            papers = []
+            async for paper in self.fetcher.search(search_query, max_results=max_results):
+                papers.append(paper)
+            return papers
+            
+        except Exception as e:
+            logger.error(f"Error searching ArXiv: {str(e)}")
+            return []

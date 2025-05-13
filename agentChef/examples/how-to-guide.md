@@ -757,20 +757,20 @@ Note: This example requires additional dependencies. If you get import errors, y
 pip install llama-index llama-index-experimental
 ```
 
-## 10. UDRAGS Complete Example with oarc-crawlers
+## 10. ragchef Complete Example with oarc-crawlers
 
-The UDRAGS system now leverages the oarc-crawlers package for enhanced research capabilities. Here's an updated example:
+The ragchef system now leverages the oarc-crawlers package for enhanced research capabilities. Here's an updated example:
 
 ### Create the Script
 
-Create a file named `oarc_udrags_example.py`:
+Create a file named `oarc_ragchef_example.py`:
 
 ```python
 import asyncio
 from pathlib import Path
-from agentChef.udrags import ResearchManager
+from agentChef.ragchef import ResearchManager
 
-async def oarc_udrags_example():
+async def oarc_ragchef_example():
     # Create output directory
     output_dir = Path("./output")
     output_dir.mkdir(exist_ok=True)
@@ -818,13 +818,13 @@ async def oarc_udrags_example():
 
 # Run the example
 if __name__ == "__main__":
-    asyncio.run(oarc_udrags_example())
+    asyncio.run(oarc_ragchef_example())
 ```
 
 ### Run the Script
 
 ```bash
-python oarc_udrags_example.py
+python oarc_ragchef_example.py
 ```
 
 ### What to Expect
@@ -844,8 +844,8 @@ This complete example demonstrates the full workflow from research to dataset ge
 
 The agentChef package now integrates with the `oarc-crawlers` package, providing enhanced functionality for crawling and data extraction. This integration includes:
 
-- Improved web crawling with BeautifulSoup (BSWebCrawler)
-- Enhanced ArXiv paper fetching (ArxivFetcher)
+- Improved web crawling with BeautifulSoup (WebCrawler)
+- Enhanced ArXiv paper fetching (ArxivCrawler)
 - DuckDuckGo search capabilities (DuckDuckGoSearcher)
 - GitHub repository analysis (GitHubCrawler)
 - New YouTube downloading features (YouTubeDownloader)

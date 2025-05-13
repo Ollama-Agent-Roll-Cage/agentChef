@@ -382,3 +382,55 @@ class DatasetCleaner:
         except Exception as e:
             self.logger.error(f"Error cleaning turn content: {str(e)}")
             return expanded_content  # Return the original expanded content if cleaning fails
+
+    def _convert_conversations_to_df(self, conversations: List[List[Dict[str, str]]]) -> pd.DataFrame:
+        """
+        Convert conversations to a DataFrame format for analysis.
+        
+        Args:
+            conversations: List of conversations to convert
+            
+        Returns:
+            DataFrame with structured conversation data
+        """
+        data = []
+        
+        for conv_idx, conversation in enumerate(conversations):
+            for turn_idx, turn in enumerate(conversation):
+                source = turn.get('from', '')
+                value = turn.get('value', '')
+                
+                # Create a row for this turn
+                row = {
+                    'conversation_id': conv_idx,
+                    'turn_idx': turn_idx,
+                    'source': source,
+                    'content': value,
+                    'content_length': len(value),
+                    'word_count': len(value.split()),
+                    'is_question': '?' in value
+                }
+                
+                data.append(row)
+        
+        # Create DataFrame
+        if not data:
+            # Return an empty DataFrame with the expected columns
+            return pd.DataFrame(columns=[
+                'conversation_id', 'turn_idx', 'source', 'content', 
+                'content_length', 'word_count', 'is_question'
+            ])
+        
+        return pd.DataFrame(data)
+    
+    def set_model(self, model_name: str):
+        """Update the model used for dataset cleaning."""
+        if self.ollama_interface:
+            self.ollama_interface.set_model(model_name)
+        self.logger.info(f"Set dataset cleaner model to: {model_name}")
+        
+        # Update query integration if available
+        if self.pandas_query and hasattr(self.pandas_query, 'set_model'):
+            self.pandas_query.set_model(model_name)
+        if self.ollama_query and hasattr(self.ollama_query, 'set_model'):
+            self.ollama_query.set_model(model_name)

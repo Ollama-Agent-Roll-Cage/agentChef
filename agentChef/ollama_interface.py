@@ -127,3 +127,34 @@ class OllamaInterface:
             error_msg = f"Error in async communication with Ollama: {str(e)}"
             self.logger.error(error_msg)
             return {"error": error_msg, "message": {"content": error_msg}}
+    
+    async def list_models(self):
+        """Get list of available models."""
+        try:
+            self.logger.info("Calling ollama.list() to get available models")
+            result = ollama.list()
+            self.logger.info(f"ollama.list() result: {result}")
+            
+            # Check if it's the new ListResponse format
+            if hasattr(result, 'models'):
+                models = [model.model for model in result.models if hasattr(model, 'model')]
+            # Check if it's the list of Model objects format
+            elif isinstance(result, list):
+                models = [model.model for model in result if hasattr(model, 'model')]
+            # Check if it's the old format (dict with 'models' key)
+            elif isinstance(result, dict) and 'models' in result:
+                models = [model['name'] for model in result['models'] if 'name' in model]
+            else:
+                self.logger.warning(f"Unexpected response format from ollama.list(): {type(result)}")
+                return ["llama2"]  # Return default model if format unknown
+                
+            return models or ["llama2"]  # Return default if no models found
+                
+        except Exception as e:
+            self.logger.error(f"Error listing models: {str(e)}")
+            return ["llama2"]  # Return default model on error
+    
+    def set_model(self, model_name: str):
+        """Set the active model."""
+        self.model = model_name
+        self.logger.info(f"Set active model to: {model_name}")

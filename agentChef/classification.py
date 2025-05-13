@@ -124,6 +124,16 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class Classifier:
     """Classifier class for handling various classification tasks."""
     
+    def __init__(self, model_name="granite3-guardian:8b"):
+        self.model = model_name
+        self.rate_limit_delay = 3
+        self.logger = logging.getLogger(__name__)
+    
+    def set_model(self, model_name: str):
+        """Set the model to use for classification."""
+        self.model = model_name
+        self.logger.info(f"Set classifier model to: {model_name}")
+    
     async def check_sexual_content(self, prompt):
         """Check if the prompt contains sexual content using Granite Guardian."""
         return await self.classify_content(prompt, "sexual_content")
@@ -205,7 +215,7 @@ class Classifier:
                 
                 response = await asyncio.wait_for(
                     client.chat(
-                        model="granite3-guardian:8b",  # Using 8B model for better accuracy
+                        model=self.model,  # Use the selected model
                         messages=messages,
                         options={"temperature": 0, "num_predict": 10}
                     ), 
