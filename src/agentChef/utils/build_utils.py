@@ -1,5 +1,5 @@
 """
-Build utilities for OARC Crawlers.
+Build utilities for AgentChef package.
 
 This module provides static utility methods for cleaning build artifacts,
 building the package, and publishing to PyPI or TestPyPI. It supports both
@@ -11,11 +11,16 @@ import os
 import sys
 import subprocess
 import asyncio
+import shutil
+from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class BuildUtils:
     """
-    Static utility methods for building, cleaning, and publishing OARC Crawlers.
+    Static utility methods for building, cleaning, and publishing AgentChef package.
 
     This class provides methods to:
       - Clean build artifacts (dist, build, egg-info)
@@ -27,47 +32,31 @@ class BuildUtils:
 
     @staticmethod
     def clean_build_directories():
-        """Clean build directories (dist, build, egg-info).
-        
-        Returns:
-            bool: True if successful, False otherwise
-        """
+        """Clean build, dist and egg directories."""
         try:
-            print("Cleaning build directories...")
-            # Ensure build package is installed
-            subprocess.run([sys.executable, "-m", "pip", "install", "build"], check=True)
-            
-            # Clean directories
-            if os.name == 'nt':  # Windows
-                subprocess.run("if exist dist rmdir /s /q dist", shell=True, check=True)
-                subprocess.run("if exist build rmdir /s /q build", shell=True, check=True)
-                subprocess.run("for /d %i in (*.egg-info) do rmdir /s /q %i", shell=True, check=True)
-            else:  # Unix-like
-                subprocess.run("rm -rf dist build *.egg-info", shell=True, check=True)
-                
-            print("Build directories cleaned successfully!")
+            dirs_to_clean = ['build', 'dist', '*.egg-info']
+            for d in dirs_to_clean:
+                paths = Path('.').glob(d)
+                for path in paths:
+                    if path.is_dir():
+                        shutil.rmtree(path)
+                    else:
+                        path.unlink()
             return True
-        except subprocess.CalledProcessError as e:
-            print(f"Error cleaning build directories: {e}")
-            return False
         except Exception as e:
-            print(f"Unexpected error while cleaning: {e}")
+            logger.error(f"Error cleaning directories: {e}")
             return False
     
 
     @staticmethod
     def build_package():
-        """Build the package."""
+        """Build the package using pyproject.toml."""
         try:
-            subprocess.run([sys.executable, "-m", "build"], check=True)
-            print("Package built successfully!")
+            subprocess.run(['python', '-m', 'build'], check=True)
             return True
         except subprocess.CalledProcessError as e:
-            print(f"Error building package: {e}")
-            sys.exit(1)
-        except Exception as e:
-            print(f"Error building package: {e}")
-            sys.exit(1)
+            logger.error(f"Error building package: {e}")
+            return False
 
 
     @staticmethod

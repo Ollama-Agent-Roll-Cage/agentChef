@@ -90,17 +90,20 @@ from agentChef.logs.agentchef_logging import log, setup_file_logging
 # Replace existing logger initialization with:
 logger = log
 
-class ResearchManager:
-    """Manages the research and dataset generation workflow."""
+from .base_chef import BaseChef
+
+class ResearchManager(BaseChef):
+    """RAG (Research Augmentation Generation) Chef implementation."""
     
     def __init__(self, data_dir=DEFAULT_DATA_DIR, model_name="llama3"):
-        """
-        Initialize the research manager.
-
-        Args:
-            data_dir: Directory to store research data and generated datasets
-            model_name: Name of the Ollama model to use for generations
-        """
+        """Initialize the RAG chef."""
+        super().__init__(
+            name="ragchef",
+            model_name=model_name,
+            data_dir=data_dir,
+            enable_ui=True
+        )
+        
         # Setup file logging in the data directory
         setup_file_logging(os.path.join(data_dir, 'logs'))
         logger.info("Initializing ResearchManager...")
@@ -580,6 +583,17 @@ class ResearchManager:
                 logger.info(f"Cleaned up temporary directory: {self.temp_dir}")
         except Exception as e:
             logger.error(f"Error cleaning up: {str(e)}")
+
+    async def process(self, input_data: Any) -> Dict[str, Any]:
+        """Process input through the research pipeline."""
+        if isinstance(input_data, str):
+            # Treat string input as research topic
+            return await self.research_topic(input_data)
+        return {"error": "Invalid input type"}
+        
+    async def generate(self, **kwargs) -> Dict[str, Any]:
+        """Generate conversation dataset."""
+        return await self.generate_conversation_dataset(**kwargs)
 
 class ResearchThread(QThread):
     """Thread for running research operations in the background (for UI mode)."""

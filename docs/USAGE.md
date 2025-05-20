@@ -1,18 +1,102 @@
-# RagChef Usage Guide
+# AgentChef Usage Guide
+
+## Core Components
+
+### RAGChef
+
+The Research Augmentation Generation Chef (RAGChef) is the main component for:
+- Research content collection
+- Dataset generation
+- Content augmentation
+
+```python
+from agentChef.core.chefs.ragchef import ResearchManager
+
+# Initialize
+manager = ResearchManager()
+
+# Research a topic
+result = await manager.research_topic("quantum computing")
+
+# Generate dataset
+dataset = await manager.generate_conversation_dataset(
+    num_turns=3,
+    expansion_factor=2
+)
+```
+
+### Dataset Management
+
+```python
+from agentChef.core.generation.conversation_generator import OllamaConversationGenerator
+from agentChef.core.augmentation.dataset_expander import DatasetExpander
+from agentChef.core.classification.dataset_cleaner import DatasetCleaner
+
+# Generate conversations
+generator = OllamaConversationGenerator()
+conversations = generator.generate_conversation(content)
+
+# Expand dataset
+expander = DatasetExpander(ollama_interface)
+expanded = expander.expand_conversation_dataset(conversations)
+
+# Clean dataset
+cleaner = DatasetCleaner(ollama_interface)
+cleaned = cleaner.clean_dataset(expanded)
+```
+
+## Interfaces
+
+### FastAPI
+
+```bash
+uvicorn agentChef.api.agent_chef_api:app --reload
+```
+
+### CLI
+
+```bash
+# Research
+agentchef research --topic "topic"
+
+# Generate
+agentchef generate --input papers/ --turns 3
+
+# Clean
+agentchef clean --input dataset.jsonl
+```
+
+### MCP Server
+
+```bash
+agentchef mcp start --port 50505
+```
 
 ## Command-Line Interface
 
 ### Research Mode
 ```bash
+# Basic research
 python -m agentChef.ragchef --mode research \
     --topic "Your research topic" \
     --max-papers 5 \
     --max-search 10 \
     --include-github \
     --github-repos "repo1_url" "repo2_url"
+
+# Query datasets
+python -m agentChef.ragchef research query \
+    --query "Find all conversations about transformers" \
+    --dataset data/conversations.parquet \
+    --output results.json
+
+# Classify content
+python -m agentChef.ragchef research classify \
+    --text "Content to analyze" \
+    --categories harm bias quality
 ```
 
-### Generate Mode
+### Generation Mode
 ```bash
 python -m agentChef.ragchef --mode generate \
     --topic "Your topic" \
@@ -20,7 +104,8 @@ python -m agentChef.ragchef --mode generate \
     --expand 3 \
     --clean \
     --format all \
-    --hedging balanced
+    --hedging balanced \
+    --model llama3
 ```
 
 ### Process Mode
@@ -30,17 +115,43 @@ python -m agentChef.ragchef --mode process \
     --turns 3 \
     --expand 3 \
     --clean \
-    --format all
+    --format all \
+    --output-dir ./output
 ```
 
-### Analyze Mode
+### Analysis Mode
 ```bash
 python -m agentChef.ragchef --mode analyze \
     --orig-dataset original.jsonl \
     --exp-dataset expanded.jsonl \
     --basic-stats \
     --quality \
-    --comparison
+    --comparison \
+    --output analysis_report.json
+```
+
+### Storage Operations
+```bash
+# Save to Parquet
+python -m agentChef.ragchef storage save \
+    --data input.json \
+    --format parquet \
+    --output data.parquet
+
+# Query stored data
+python -m agentChef.ragchef storage query \
+    --query "Find all..." \
+    --file data.parquet
+```
+
+### Model Management
+```bash
+# List available models
+python -m agentChef.ragchef models list
+
+# Set active model
+python -m agentChef.ragchef models set \
+    --model llama3
 ```
 
 ## Graphical Interface
@@ -85,6 +196,8 @@ python -m agentChef.ragchef --mode ui
 - `--model`: Choose Ollama model (default: "llama3")
 - `--output-dir`: Set custom output directory
 - `--format`: Choose output format (jsonl/parquet/csv/all)
+- `--verbose`: Enable detailed logging
+- `--config`: Use custom configuration file
 
 ## Examples
 

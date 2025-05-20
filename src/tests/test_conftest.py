@@ -285,3 +285,12 @@ def disable_logging():
     logging.disable(logging.CRITICAL)
     yield
     logging.disable(logging.NOTSET)
+
+import asyncio
+
+@pytest.fixture
+def event_loop():
+    """Create an event loop for async tests."""
+    loop = asyncio.get_event_loop()
+    yield loop
+    loop.close()

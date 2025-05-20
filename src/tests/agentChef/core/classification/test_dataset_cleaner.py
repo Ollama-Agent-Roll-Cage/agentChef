@@ -449,3 +449,36 @@ class TestDatasetCleaner(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+import pytest
+from unittest.mock import MagicMock, patch
+from agentChef.core.classification.dataset_cleaner import DatasetCleaner
+
+@pytest.fixture
+def dataset_cleaner(mock_ollama_interface, temp_dir):
+    """Create a DatasetCleaner instance for testing."""
+    return DatasetCleaner(
+        ollama_interface=mock_ollama_interface,
+        output_dir=str(temp_dir)
+    )
+
+@pytest.mark.asyncio
+async def test_clean_dataset(dataset_cleaner):
+    """Test cleaning a dataset."""
+    original = [
+        [
+            {"from": "human", "value": "What is ML?"},
+            {"from": "gpt", "value": "Machine learning is..."}
+        ]
+    ]
+    expanded = [
+        [
+            {"from": "human", "value": "What's machine learning?"},
+            {"from": "gpt", "value": "ML is a type of..."}
+        ]
+    ]
+    
+    result = await dataset_cleaner.clean_dataset(original, expanded)
+    assert len(result) == len(expanded)
+
+# ... more test cases for other DatasetCleaner methods ...

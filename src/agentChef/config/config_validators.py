@@ -6,8 +6,7 @@ ensuring user-provided values are correct and within expected constraints.
 """
 
 from prompt_toolkit.validation import ValidationError, Validator
-
-from oarc_utils.decorators import singleton
+from oarc_utils import singleton # Replace local decorator with oarc-utils
 
 
 @singleton

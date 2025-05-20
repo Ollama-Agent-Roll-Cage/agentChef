@@ -1,9 +1,7 @@
 """
-Configuration management for OARC Crawlers.
+Configuration management for AgentChef.
 
-This module provides a centralized configuration system that handles defaults,
-environment variable overrides, and runtime configuration for the OARC Crawlers
-package.
+This module provides a centralized configuration system for AgentChef.
 """
 
 import os
@@ -11,11 +9,10 @@ import configparser
 import pathlib
 from typing import Any, Dict, Optional
 
-from oarc_log import log
-from oarc_utils.decorators import singleton
+from oarc_utils import singleton # Replace local decorator with oarc-utils
 
-from oarc_crawlers.utils.paths import Paths
-from oarc_crawlers.utils.const import (
+from agentChef.utils.paths import Paths 
+from agentChef.utils.const import (
     CONFIG_SECTION,
     CONFIG_KEY_DATA_DIR,
     CONFIG_KEY_LOG_LEVEL,

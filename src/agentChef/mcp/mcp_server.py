@@ -32,6 +32,18 @@ from oarc_crawlers.core import (
 )
 from oarc_crawlers.utils.const import FAILURE, VERSION
 
+import logging
+import json
+from pathlib import Path
+from typing import Any
+
+from agentChef.core.chefs.ragchef import ResearchManager
+from agentChef.core.ollama.ollama_interface import OllamaInterface
+from agentChef.core.generation.conversation_generator import OllamaConversationGenerator
+from agentChef.utils.mcp_utils import MCPUtils
+from agentChef.utils.const import MCP_PORT
+
+logger = logging.getLogger(__name__)
 
 @singleton
 class MCPServer:
@@ -267,3 +279,98 @@ if __name__ == "__main__":
             mcp_name=self.name,
             dependencies=self.mcp.dependencies
         )
+
+    async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        """Handle an MCP client connection."""
+        while True:
+            try:
+                data = await reader.read(4096)
+                if not data:
+                    break
+                    
+                request = json.loads(data.decode())
+                response = await self.handle_request(request)
+                
+                writer.write(json.dumps(response).encode() + b"\n")
+                await writer.drain()
+                
+            except Exception as e:
+                logger.error(f"Error handling MCP request: {e}")
+                error_response = {"error": str(e)}
+                writer.write(json.dumps(error_response).encode() + b"\n")
+                await writer.drain()
+                break
+                
+        writer.close()
+        await writer.wait_closed()
+        
+    async def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle an MCP request."""
+        command = request.get("command")
+        params = request.get("params", {})
+        
+        handlers = {
+            "research": self._handle_research,
+            "generate": self._handle_generate,
+            "expand": self._handle_expand,
+            "clean": self._handle_clean,
+            "chat": self._handle_chat
+        }
+        
+        handler = handlers.get(command)
+        if handler:
+            return await handler(params)
+        else:
+            return {"error": f"Unknown command: {command}"}
+            
+    async def _handle_research(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle research requests."""
+        try:
+            result = await self.research_manager.research_topic(**params)
+            return {"result": result}
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def _handle_generate(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle generation requests."""
+        try:
+            result = await self.research_manager.generate_conversation_dataset(**params)
+            return {"result": result}
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def _handle_expand(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle dataset expansion requests."""
+        try:
+            result = await self.research_manager.expand_dataset(**params)
+            return {"result": result}
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def _handle_clean(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle dataset cleaning requests."""
+        try:
+            result = await self.research_manager.clean_dataset(**params)
+            return {"result": result}
+        except Exception as e:
+            return {"error": str(e)}
+
+    async def start(self):
+        """Start the MCP server."""
+        self.server = await asyncio.start_server(
+            self.handle_client, 
+            self.host, 
+            self.port
+        )
+        
+        addr = self.server.sockets[0].getsockname()
+        logger.info(f'MCP server started on {addr}')
+        
+        async with self.server:
+            await self.server.serve_forever()
+            
+    def stop(self):
+        """Stop the MCP server."""
+        if self.server:
+            self.server.close()
+            logger.info("MCP server stopped")

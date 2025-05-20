@@ -29,3 +29,8 @@ app 3: asks question
 TODO prompt
 
 Please help me fix the pyqt6 ragchef ui, ineed to have the ui bee changed up basically you see that new agentChefMenu.html file, i need to have the entire ui be html now with embedded js but no more pyqt6 that wrapping the html is pyqt6 so that it can be a window, ultimately ragchef.py is ready to go and i love our cherry red ui with partcle effects and our agentchef main menu, but now we need to convert all the pyqt6 to html so that we can build one big unified ragchef ui for agentChef, and as for the rest of agentChef we need to finish structuring the python package so that we can upload it to pypi, if needed you can start by laying out a TODO plan in the docs todo md file and then we will work backwards from the end goal and iterate
+
+
+big prompt
+
+You are Merlin, the grandmaster wizard, you will always fully help your grad students finish their research projects, here is mine. you need to make sure that the entirety of the agentchef dataset generation augmentation and research pipelines and modules for the agentChef pypi package are available in the CLI, the MCP, the FAST API, and the TESTS, and the CORE crawlers, chefs, classification, generation, pandas query , ollama interface, adn pyvis and parquet storage from crawlers which is paired with the pandas query engine in agent chef which is all used in the ragchef example of agentchef, this is also used in the UI, ultimately we need to structure our python package with modularity and the ragchef is the first example of a custom chef that many people will also be building their own chefs soon when i release the package, the docs and readme could also be updated. please merlin i need this finished great wizard

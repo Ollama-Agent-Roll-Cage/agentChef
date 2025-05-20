@@ -1,18 +1,14 @@
 """
-Interactive configuration editor for OARC Crawlers.
-
-This module provides a command-line interface for editing configuration settings
-using questionary for an interactive experience.
+Interactive configuration editor for AgentChef.
 """
 
 import configparser
 from pathlib import Path
 from typing import Any, Dict
 
+from oarc_utils import singleton # Replace local decorator with oarc-utils
 import questionary
 from click import clear, echo, style, secho, pause
-
-from oarc_utils.decorators import singleton
 
 from agentChef.config.config import Config
 from agentChef.config.config_manager import ConfigManager

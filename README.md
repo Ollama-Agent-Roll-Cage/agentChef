@@ -6,9 +6,9 @@
   <a href="https://discord.gg/dAzSYcnpdF"><img src="assets/Discord button.png" height="48"></a>
 </p>
 
-# agentChef
+# AgentChef 🧪👨‍🍳
 
-agentChef is a comprehensive Python library for AI research, dataset generation, and conversation management using large language models. It provides tools for crawling, processing, and analyzing data sources including web pages, ArXiv papers, and GitHub repositories, and generating high-quality conversation datasets for AI training.
+AgentChef is an extensible toolkit for building custom AI agent pipelines ("chefs") that can perform complex research, data generation, and augmentation tasks.
 
 [![PyPI version](https://badge.fury.io/py/agentChef.svg)](https://badge.fury.io/py/agentChef)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -17,7 +17,7 @@ agentChef is a comprehensive Python library for AI research, dataset generation,
 ## Table of Contents
 
 - [Overview](#overview)
-- [Features](#features)
+- [Core Features](#core-features)
 - [Installation](#installation)
   - [Prerequisites](#prerequisites)
   - [Installing from PyPI](#installing-from-pypi)
@@ -41,17 +41,27 @@ agentChef is a comprehensive Python library for AI research, dataset generation,
 - [Contributing](#contributing)
 - [License](#license)
 
-## Features
+## Core Features
 
-- **AI-Powered Research**: Search and process web content, ArXiv papers, and GitHub repositories
-- **Conversation Generation**: Create synthetic conversation data from research papers and other content
-- **Dataset Expansion**: Generate variations and paraphrases to expand training datasets
-- **Quality Control**: Clean and validate generated datasets to ensure high quality
-- **Integrated Ollama Support**: Seamless integration with local Ollama models
-- **Pandas Integration**: Natural language querying of pandas DataFrames
-- **Flexible Output Formats**: Export data in JSONL, Parquet, CSV, and other formats
-- **Command-line Interface**: Full-featured CLI for research and dataset generation workflows
-- **Optional GUI**: User-friendly interface for non-technical users (requires PyQt6)
+- 🔨 Chef Architecture
+  - Build custom AI agent pipelines
+  - Modular components for reuse
+  - Event-driven workflow system
+  - Built-in UI components
+
+- 🚀 Base Components
+  - MCP Protocol Integration
+  - FastAPI Interface
+  - PyQt6 UI Framework
+  - Parquet/DataFrame Tools
+  - Vector Visualization
+
+- 📦 Provided Chefs
+  - RagChef (Reference Implementation)
+    - Research pipeline
+    - Dataset generation
+    - Data augmentation
+    - Quality validation
 
 ## Overview
 
@@ -1010,11 +1020,11 @@ agentChef/
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome community chef contributions! See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 
-Apache 2.0
+Apache 2.0 - See [LICENSE](LICENSE)
 
 ## Acknowledgments
 

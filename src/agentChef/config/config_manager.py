@@ -1,5 +1,5 @@
 """
-Configuration manager for OARC Crawlers.
+Configuration manager for AgentChef.
 
 This module provides functions for managing configuration settings,
 including listing, creating, reading, and interactively editing configuration files.
@@ -16,11 +16,11 @@ from typing import Any, Dict, Optional, Tuple
 import click
 from click import echo, style
 
-from oarc_utils.decorators import singleton
+from agentChef.utils.decorators import singleton
 
-from oarc_crawlers.utils.paths import Paths
-from oarc_crawlers.config.config import Config
-from oarc_crawlers.utils.const import (
+from agentChef.utils.paths import Paths
+from agentChef.config.config import Config
+from agentChef.utils.const import (
     CONFIG_KEY_DATA_DIR,
     CONFIG_KEY_LOG_LEVEL,
     CONFIG_KEY_MAX_RETRIES,
@@ -357,6 +357,6 @@ class ConfigManager:
             config_file (str, optional): Path to a specific config file to edit.
                                         If None, uses the default config file.
         """
-        from oarc_crawlers.config.config_editor import ConfigEditor
+        from agentChef.config.config_editor import ConfigEditor
         editor = ConfigEditor()
         editor.run(config_file)
