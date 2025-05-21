@@ -54,15 +54,33 @@ from pathlib import Path
 from typing import Optional
 
 def setup_file_logging(log_dir: str, filename: str = "agentchef.log") -> None:
-    """Setup file logging in addition to console logging."""
-    log_path = Path(log_dir)
-    log_path.mkdir(parents=True, exist_ok=True)
+    """Configure logging to write to a file in the specified directory.
     
-    file_handler = logging.FileHandler(log_path / filename)
-    file_handler.setFormatter(logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    ))
-    log.addHandler(file_handler)
+    Args:
+        log_dir (str): Directory to store log files
+        filename (str): Name of the log file
+    """
+    try:
+        # Create logs directory if it doesn't exist
+        Path(log_dir).mkdir(parents=True, exist_ok=True)
+        
+        # Configure logging to file
+        import logging
+        file_handler = logging.FileHandler(
+            Path(log_dir) / filename,
+            encoding='utf-8'
+        )
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        ))
+        
+        # Get the underlying logger from oarc_log
+        logger = logging.getLogger('agentchef')
+        logger.addHandler(file_handler)
+        logger.setLevel(logging.INFO)
+        
+    except Exception as e:
+        print(f"Warning: Could not set up file logging: {e}")
 
 def get_module_logger(module_name: str) -> logging.Logger:
     """Get a logger for a specific module."""

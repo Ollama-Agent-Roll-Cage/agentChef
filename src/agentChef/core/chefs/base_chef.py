@@ -5,8 +5,9 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
-from agentChef.core.ollama.ollama_interface import OllamaInterface
-from agentChef.utils.const import DEFAULT_DATA_DIR
+# Use relative import to avoid dependency issues
+from ...utils.const import DEFAULT_DATA_DIR
+from ..ollama.ollama_interface import OllamaInterface
 
 class BaseChef:
     """Base class for creating custom AI agent pipelines ("chefs").

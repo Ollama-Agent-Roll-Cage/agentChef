@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 UTC = timezone.utc
 
 import logging
+logger = logging.getLogger(__name__)  # Add this line
 import webbrowser
 from typing import Dict, List, Any, Optional, Union, Tuple
 

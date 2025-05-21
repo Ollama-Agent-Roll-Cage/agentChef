@@ -20,7 +20,7 @@ __version__ = '0.2.7'
 
 # Import main components
 try:
-    from .crawlers.crawlers_module import (
+    from .core.crawlers.crawlers_module import (
         WebCrawler, 
         ArxivSearcher, 
         DuckDuckGoSearcher, 

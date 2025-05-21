@@ -4,19 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentChef"
-version = "0.2.7"
+version = "0.2.8"
 description = "Comprehensive toolkit for conversation dataset creation, augmentation, and analysis"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.12"
 license = {text = "Apache 2.0"}
 authors = [
-    {name = "Leoleojames1", email = "Leoleojames1@gmail.com"}
+    {name = "oll4m404rc", email = "notsetup@gmail.com"}
 ]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -29,10 +27,10 @@ dependencies = [
     "beautifulsoup4>=3.2.2",
     "gitpython>=3.1.44",
     "llama-index>=0.12.28",
-    "llama-index-experimental>=0.5.4",
+    "llama-index-experimental>=0.5.5",
     "matplotlib>=3.10.1",
-    "numpy>=2.2.4",
-    "ollama>=0.4.7",
+    "numpy>=2.2.6",
+    "ollama>=0.4.8",
     "pandas>=2.2.3",
     "pyyaml>=6.0.2",
     "PyQt6>=6.8.1",
@@ -59,10 +57,57 @@ dev = [
 "Documentation" = "https://github.com/Leoleojames1/agentChef/blob/main/README.md"
 
 [project.scripts]
-agentchef = "agentChef.ragchef:main"
+agentchef = "agentChef.main:main"
 
 [tool.setuptools]
-packages = ["agentChef"]
+package-dir = {"" = "src"}
+packages = [
+    "agentChef",
+    "agentChef.api",
+    "agentChef.cli",
+    "agentChef.config",
+    "agentChef.logs",
+    "agentChef.mcp",
+    "agentChef.utils",
+    "agentChef.core",
+    "agentChef.augmentation",
+    "agentChef.chefs",
+    "agentChef.classification",
+    "agentChef.crawlers",
+    "agentChef.generation",
+    "agentChef.img_annotation",
+    "agentChef.llamaindex",
+    "agentChef.ollama",
+    "agentChef.pyvis"
+    "agentChef.ui_components"
+]
 
 [tool.setuptools.package-data]
 agentChef = ["assets/*.png"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
+python_files = "test_*.py"
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "B", "I"]
+ignore = []

@@ -11,7 +11,7 @@ from src.agentChef.chefs.ragchef import ResearchManager, OllamaInterface
 from src.agentChef.generation.conversation_generator import OllamaConversationGenerator
 from src.agentChef.augmentation.dataset_expander import DatasetExpander
 from agentChef.classification.dataset_cleaner import DatasetCleaner
-from agentChef.crawlers.crawlers_module import WebCrawler, ArxivSearcher, DuckDuckGoSearcher, GitHubCrawler
+from agentChef.core.crawlers.crawlers_module import WebCrawler, ArxivSearcher, DuckDuckGoSearcher, GitHubCrawler
 
 class TestResearchManager(unittest.TestCase):
     

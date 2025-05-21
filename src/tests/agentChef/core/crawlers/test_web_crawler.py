@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 import tempfile
 
-from agentChef.crawlers.crawlers_module import WebCrawler
+from agentChef.core.crawlers.crawlers_module import WebCrawler
 
 class TestWebCrawler(unittest.IsolatedAsyncioTestCase):
     

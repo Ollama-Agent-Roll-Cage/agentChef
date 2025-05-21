@@ -17,6 +17,7 @@ import re
 import logging
 import json
 import random  # Add this import
+import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Tuple, Any
 from datetime import datetime, UTC

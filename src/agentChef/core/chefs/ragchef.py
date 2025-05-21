@@ -40,7 +40,7 @@ except ImportError:
     logging.warning("Ollama not available. Some features will be disabled.")
 
 # Import crawler modules
-from agentChef.crawlers.crawlers_module import (
+from agentChef.core.crawlers.crawlers_module import (
     WebCrawlerWrapper, 
     ArxivSearcher, 
     DuckDuckGoSearcher, 
@@ -48,10 +48,10 @@ from agentChef.crawlers.crawlers_module import (
 )
 
 # Import data processing modules
-from src.agentChef.generation.conversation_generator import OllamaConversationGenerator
-from src.agentChef.augmentation.dataset_expander import DatasetExpander
-from agentChef.classification.dataset_cleaner import DatasetCleaner
-from src.agentChef.ollama.ollama_interface import OllamaInterface  # Add this import
+from agentChef.core.generation.conversation_generator import OllamaConversationGenerator
+from agentChef.core.augmentation.dataset_expander import DatasetExpander
+from agentChef.core.classification.dataset_cleaner import DatasetCleaner
+from agentChef.core.ollama.ollama_interface import OllamaInterface  # Add this import
 
 # Optional UI imports - only imported if UI mode is selected
 try:

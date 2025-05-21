@@ -1,4 +1,6 @@
 """Constants used throughout AgentChef."""
+import os
+from pathlib import Path
 
 # MCP Protocol
 MCP_PORT = 50505
@@ -29,6 +31,35 @@ ENV_TIMEOUT = "AGENTCHEF_TIMEOUT"
 ENV_USER_AGENT = "AGENTCHEF_USER_AGENT"
 ENV_GITHUB_TOKEN = "AGENTCHEF_GITHUB_TOKEN"
 
+# Data directories
+DEFAULT_DATA_DIR = Path(os.getenv("AGENTCHEF_DATA_DIR", Path.home() / ".agentchef"))
+PAPERS_DIR = DEFAULT_DATA_DIR / "papers"
+DATASETS_DIR = DEFAULT_DATA_DIR / "datasets"
+ASSETS_DIR = DEFAULT_DATA_DIR / "assets"
+LOGS_DIR = DEFAULT_DATA_DIR / "logs"
+
+# Create required directories
+for dir_path in [DEFAULT_DATA_DIR, PAPERS_DIR, DATASETS_DIR, ASSETS_DIR, LOGS_DIR]:
+    dir_path.mkdir(parents=True, exist_ok=True)
+
 # Return codes
 SUCCESS = 0
 ERROR = 1
+
+# Base directories
+PACKAGE_DIR = Path(__file__).parent.parent
+UI_DIR = PACKAGE_DIR / 'core' / 'ui_components'
+MENU_DIR = UI_DIR / 'menu'
+MENU_HTML_PATH = MENU_DIR / 'agentChefMenu.html'
+
+# Create required directories
+for directory in [DEFAULT_DATA_DIR, UI_DIR, MENU_DIR]:
+    directory.mkdir(parents=True, exist_ok=True)
+
+# Default configuration
+DEFAULT_CONFIG = {
+    'model_name': 'llama2',
+    'enable_ui': True,
+    'data_dir': str(DEFAULT_DATA_DIR),
+    'log_level': 'INFO'
+}

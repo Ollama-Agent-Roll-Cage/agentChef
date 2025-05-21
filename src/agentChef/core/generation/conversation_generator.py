@@ -7,11 +7,11 @@ import pandas as pd
 import random
 
 # Import OllamaInterface
-from src.agentChef.ollama.ollama_interface import OllamaInterface
+from agentChef.core.ollama.ollama_interface import OllamaInterface
 
 # Import pandas_query if available
 try:
-    from src.agentChef.llamaindex.pandas_query import OllamaLlamaIndexIntegration
+    from agentChef.core.llamaindex.pandas_query import OllamaLlamaIndexIntegration
     HAS_QUERY_ENGINE = True
 except ImportError:
     HAS_QUERY_ENGINE = False

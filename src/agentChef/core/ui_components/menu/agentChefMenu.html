@@ -213,9 +213,9 @@
     </header>
 
     <div class="menu-container">
-      <button class="gradient-button" onclick="window.backend && window.backend.launchWizard()">
+      <button class="gradient-button" onclick="window.backend && window.backend.triggerWizard()">
         <div class="gradient-bg"></div>
-        <span class="button-text">Agent Chef Wizard</span>
+        <span class="button-text">RAGChef Wizard</span>
       </button>
       <button class="gradient-button" disabled>
         <div class="gradient-bg"></div>
@@ -283,8 +283,10 @@
       if (window.QWebChannel) {
         new QWebChannel(qt.webChannelTransport, function(channel) {
           window.backend = channel.objects.backend;
-          console.log("WebChannel initialized");
+          console.log("WebChannel initialized with backend bridge");
         });
+      } else {
+        console.warn("QWebChannel not available");
       }
     });
   </script>

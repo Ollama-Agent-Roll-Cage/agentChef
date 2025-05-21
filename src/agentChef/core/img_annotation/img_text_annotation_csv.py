@@ -1,35 +1,55 @@
-"""img_text_annotation_csv.py
+"""img_annotation_processor.py
 
 This script processes image files and their associated text annotations,
-compiling them into a metadata CSV file. It reads image files and their corresponding text files from a specified input directory,
-copies the images to an output directory, and generates a CSV file containing the filenames and their associated text annotations.
+compiling them into a metadata CSV file. It can either use annotations provided directly as a dictionary
+or process images from a directory and generate a CSV file.
 
 You can use this script as a module in your project by importing the `ImageAnnotationProcessor` class as shown below.
 
 ```python
-from image_annotation_processor import ImageAnnotationProcessor
+from img_annotation_processor import ImageAnnotationProcessor
 
-# Create a processor instance
-processor = ImageAnnotationProcessor.create_instance(
-    input_dir="path/to/your/input/directory",
-    output_dir="path/to/your/output/directory"
+# Example 1: Create a processor with dictionary annotations
+annotations = {
+    "image1.jpg": "A beautiful sunset over mountains",
+    "image2.png": "A cat playing with a toy"
+}
+
+processor = ImageAnnotationProcessor.create_with_annotations(
+    input_dir="path/to/your/images",
+    output_dir="path/to/your/output/directory",
+    annotations=annotations
 )
 
 # Process files and generate the metadata.csv
 csv_path = processor.generate_metadata_csv()
 print(f"Metadata CSV generated at: {csv_path}")
+
+# Example 2: Just process images from a directory
+processor = ImageAnnotationProcessor.create_instance(
+    input_dir="path/to/your/input/directory",
+    output_dir="path/to/your/output/directory"
+)
+
+# You can add annotations later
+processor.add_annotations({
+    "image3.jpg": "A scenic landscape with a river",
+    "image4.png": "Portrait of a smiling person"
+})
+
+csv_path = processor.generate_metadata_csv()
+print(f"Metadata CSV generated at: {csv_path}")
 ```
 
-The class is designed to be easily imported from anywhere in your project. It has the following features:
+The class is designed to be easily integrated with other annotation generators. It has the following features:
 
 - Handles multiple image formats (png, jpg, jpeg, heic)
-- Pairs image files with matching text files
+- Accepts annotations directly as dictionaries
 - Error handling for file operations
 - Creates the output directory if it doesn't exist
-- Generates a metadata.csv with the hugging face img url and text annotation format.
+- Generates a metadata.csv with the hugging face img url and text annotation format
 
-Upload this file to your img annotation dataset folder where your images are located, and this will allow
-hugging face to link the images to the text annotations and display them correctly.
+This allows you to build separate annotation generators that can feed into this processor.
 
 Example hugging face metadata.csv file:
 ```url
@@ -42,7 +62,7 @@ import os
 import csv
 import shutil
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Dict, Optional
 
 
 class ImageAnnotationProcessor:
@@ -51,85 +71,72 @@ class ImageAnnotationProcessor:
     compiling them into a metadata CSV file.
     """
     
-    def __init__(self, input_dir: str, output_dir: str):
+    def __init__(self, input_dir: str, output_dir: str, annotations: Optional[Dict[str, str]] = None):
         """
-        Initialize the processor with input and output directories.
+        Initialize the processor with input and output directories and optional annotations.
         
         Args:
-            input_dir: Directory containing images and text annotations
+            input_dir: Directory containing images
             output_dir: Directory where processed files and metadata will be saved
+            annotations: Optional dictionary with image filenames as keys and annotation text as values
         """
         self.input_dir = Path(input_dir)
         self.output_dir = Path(output_dir)
         self.image_extensions = ['.png', '.jpg', '.jpeg', '.heic']
-        self.text_extension = '.txt'
+        self.annotations = annotations or {}
         
         # Create output directory if it doesn't exist
         os.makedirs(self.output_dir, exist_ok=True)
     
-    def _get_file_pairs(self) -> List[Tuple[Path, Path]]:
+    def add_annotations(self, annotations: Dict[str, str]) -> None:
         """
-        Find all image and text file pairs with matching base names.
-        
-        Returns:
-            List of tuples containing (image_path, text_path)
-        """
-        file_pairs = []
-        
-        # Get all files in the input directory
-        all_files = list(self.input_dir.glob('*'))
-        
-        # Separate image and text files
-        image_files = [f for f in all_files if f.suffix.lower() in self.image_extensions]
-        text_files = [f for f in all_files if f.suffix.lower() == self.text_extension]
-        
-        # Create a dictionary of text files by their stem (name without extension)
-        text_dict = {f.stem: f for f in text_files}
-        
-        # Find pairs
-        for img_file in image_files:
-            if img_file.stem in text_dict:
-                file_pairs.append((img_file, text_dict[img_file.stem]))
-        
-        return file_pairs
-    
-    def _read_text_file(self, file_path: Path) -> str:
-        """
-        Read and return the contents of a text file.
+        Add or update annotations for images.
         
         Args:
-            file_path: Path to the text file
-            
-        Returns:
-            String containing the text file contents
+            annotations: Dictionary with image filenames as keys and annotation text as values
         """
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                return f.read().strip()
-        except Exception as e:
-            print(f"Error reading {file_path}: {e}")
-            return ""
+        self.annotations.update(annotations)
+    
+    def _get_image_files(self) -> List[Path]:
+        """
+        Find all image files in the input directory.
+        
+        Returns:
+            List of paths to image files
+        """
+        all_files = list(self.input_dir.glob('*'))
+        return [f for f in all_files if f.suffix.lower() in self.image_extensions]
     
     def process_files(self) -> Dict[str, str]:
         """
-        Process all file pairs and copy files to output directory.
+        Process all image files and copy them to output directory.
+        If annotations are provided, they are used; otherwise, empty annotations are created.
         
         Returns:
             Dictionary with image filenames as keys and annotation text as values
         """
         metadata = {}
-        file_pairs = self._get_file_pairs()
+        image_files = self._get_image_files()
         
-        for img_path, txt_path in file_pairs:
-            # Read the text annotation
-            annotation = self._read_text_file(txt_path)
-            
+        for img_path in image_files:
             # Copy the image file to output directory
             try:
                 shutil.copy2(img_path, self.output_dir)
-                metadata[img_path.name] = annotation
+                # Use provided annotation if available, otherwise use empty string
+                metadata[img_path.name] = self.annotations.get(img_path.name, "")
             except Exception as e:
                 print(f"Error copying {img_path}: {e}")
+        
+        # Also include annotations for files that might not be in the input directory
+        # but are specified in the annotations dictionary
+        for filename, annotation in self.annotations.items():
+            if filename not in metadata:
+                # Check if the file exists in the output directory already
+                output_file = self.output_dir / filename
+                if output_file.exists():
+                    metadata[filename] = annotation
+                else:
+                    print(f"Warning: Annotation provided for {filename} but file not found in input directory")
         
         return metadata
     
@@ -164,21 +171,43 @@ class ImageAnnotationProcessor:
         Factory method to create and return an instance of the processor.
         
         Args:
-            input_dir: Directory containing images and text annotations
+            input_dir: Directory containing images
             output_dir: Directory where processed files and metadata will be saved
             
         Returns:
             An instance of ImageAnnotationProcessor
         """
         return ImageAnnotationProcessor(input_dir, output_dir)
+    
+    @staticmethod
+    def create_with_annotations(input_dir: str, output_dir: str, 
+                              annotations: Dict[str, str]) -> 'ImageAnnotationProcessor':
+        """
+        Factory method to create and return an instance of the processor with annotations.
+        
+        Args:
+            input_dir: Directory containing images
+            output_dir: Directory where processed files and metadata will be saved
+            annotations: Dictionary with image filenames as keys and annotation text as values
+            
+        Returns:
+            An instance of ImageAnnotationProcessor with annotations
+        """
+        return ImageAnnotationProcessor(input_dir, output_dir, annotations)
 
 
 # Example usage:
 if __name__ == "__main__":
-    # Replace with your actual paths
-    processor = ImageAnnotationProcessor.create_instance(
+    # Example with direct annotations
+    sample_annotations = {
+        "image1.jpg": "A scenic mountain landscape",
+        "image2.png": "A busy city street at night"
+    }
+    
+    processor = ImageAnnotationProcessor.create_with_annotations(
         input_dir="./input_images", 
-        output_dir="./processed_output"
+        output_dir="./processed_output",
+        annotations=sample_annotations
     )
     
     csv_path = processor.generate_metadata_csv()
