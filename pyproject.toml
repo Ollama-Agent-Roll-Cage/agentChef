@@ -70,16 +70,16 @@ packages = [
     "agentChef.mcp",
     "agentChef.utils",
     "agentChef.core",
-    "agentChef.augmentation",
-    "agentChef.chefs",
-    "agentChef.classification",
-    "agentChef.crawlers",
-    "agentChef.generation",
-    "agentChef.img_annotation",
-    "agentChef.llamaindex",
-    "agentChef.ollama",
-    "agentChef.pyvis"
-    "agentChef.ui_components"
+    "agentChef.core.augmentation",
+    "agentChef.core.chefs",
+    "agentChef.core.classification",
+    "agentChef.core.crawlers",
+    "agentChef.core.generation",
+    "agentChef.core.img_annotation",
+    "agentChef.core.llamaindex",
+    "agentChef.core.ollama",
+    "agentChef.core.pyvis",
+    "agentChef.core.ui_components"
 ]
 
 [tool.setuptools.package-data]

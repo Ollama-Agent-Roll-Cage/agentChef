@@ -9,19 +9,11 @@ import click
 
 from oarc_log import enable_debug_logging
 
-from oarc_crawlers.cli.help_texts import MAIN_HELP, ARGS_VERBOSE_HELP, ARGS_CONFIG_HELP
-from oarc_crawlers.config.config import apply_config_file
-from oarc_crawlers.cli.cmd import (
+from agentChef.cli.help_texts import MAIN_HELP, ARGS_VERBOSE_HELP, ARGS_CONFIG_HELP
+from agentChef.config.config import apply_config_file
+from agentChef.cli.cmd import (
     arxiv,
     build,
-    config,
-    data,
-    ddg,
-    gh,
-    mcp,
-    publish,
-    web,
-    yt,
 )
 
 @click.group(help=MAIN_HELP)

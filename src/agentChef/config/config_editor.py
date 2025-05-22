@@ -14,7 +14,7 @@ from agentChef.config.config import Config
 from agentChef.config.config_manager import ConfigManager
 from agentChef.config.config_validators import NumberValidator
 from agentChef.utils.paths import Paths
-from agentChef.utils.const import CONFIG_SECTION, DEFAULT_CONFIG_FILENAME
+from agentChef.utils.const import CONFIG_SECTION, DEFAULT_CONFIG_FILENAME, CONFIG_KEY_DATA_DIR, CONFIG_KEY_LOG_LEVEL, DEFAULT_CONFIG
 
 
 # global class
@@ -22,10 +22,51 @@ from agentChef.utils.const import CONFIG_SECTION, DEFAULT_CONFIG_FILENAME
 class ConfigEditor:
     """Interactive UI for editing agentChef configuration."""
     
-    # high class
-    _current_config = None
-    _config_details = None
-    
+    def __init__(self):
+        self._current_config = DEFAULT_CONFIG.copy()
+        self._config_details = {
+            CONFIG_KEY_DATA_DIR: {
+                "description": "Directory to store data",
+                "type": "path",
+                "help": "Enter a valid directory path"
+            },
+            CONFIG_KEY_LOG_LEVEL: {
+                "description": "Logging verbosity level",
+                "type": "select",
+                "options": ["DEBUG", "INFO", "WARNING", "ERROR"],
+                "help": "Select logging level"
+            }
+        }
+
+    def main_menu(cls) -> None:
+        """Display the main configuration menu."""
+        cls._ensure_initialized()
+        
+        action = questionary.select(
+            "Select an action:",
+            choices=[
+                "Edit configuration settings",
+                "Save current configuration",
+                "Reset to defaults",
+                "Show current configuration",
+                questionary.Separator(),
+                "Exit"
+            ]
+        ).ask()
+        
+        match action:
+            case "Edit configuration settings":
+                cls.edit_settings()
+            case "Save current configuration":
+                cls.save_changes()
+            case "Reset to defaults":
+                if cls.confirm_reset():
+                    cls._current_config = DEFAULT_CONFIG.copy()
+                cls.main_menu()
+            case "Show current configuration":
+                cls.show_current_config()
+            case "Exit":
+                return
 
     @classmethod
     def _ensure_initialized(cls):
@@ -49,65 +90,15 @@ class ConfigEditor:
     
 
     @classmethod
-    def main_menu(cls) -> None:
-        """Display the main configuration menu."""
-        cls._ensure_initialized()
-        echo(style("\nagentChef Configuration Editor", fg='green', bold=True))
-        
-        action = questionary.select(
-            "Select an action:",
-            choices=[
-                "Edit configuration settings",
-                "Save current configuration",
-                "Reset to defaults",
-                "Show current configuration",
-                "Load configuration from file",
-                questionary.Separator(),
-                "Exit"
-            ]
-        ).ask()
-        
-        if not action:
-            return
-            
-        match action:
-            case "Edit configuration settings":
-                cls.edit_settings()
-            case "Save current configuration":
-                cls.save_changes(cls._current_config)
-            case "Reset to defaults":
-                if cls.confirm_reset():
-                    cls.reset_to_defaults()
-                    echo(style("All settings reset to defaults.", fg='green'))
-                    cls.main_menu()
-            case "Show current configuration":
-                cls.show_current_config()
-                # Main menu will be called from show_current_config after key press
-            case "Load configuration from file":
-                cls.load_configuration()
-                cls.main_menu()
-            case "Exit":
-                if cls.is_config_changed():
-                    save = questionary.confirm(
-                        'You have unsaved changes. Save before exiting?',
-                        default=True
-                    ).ask()
-                    if save:
-                        cls.save_changes(cls._current_config)
-                return
-    
-
-    @classmethod
     def edit_settings(cls) -> None:
         """Present a menu to select which setting to edit."""
         cls._ensure_initialized()
-        choices = []
-        for key in cls._current_config.keys():
-            description = cls._config_details.get(key, {}).get("description", "")
-            choices.append(f"{key}: {cls._current_config[key]} - {description}")
-        
-        choices.append(questionary.Separator())
-        choices.append("Back to main menu")
+        choices = [
+            f"Data Directory ({cls._current_config.get(CONFIG_KEY_DATA_DIR)})",
+            f"Log Level ({cls._current_config.get(CONFIG_KEY_LOG_LEVEL)})",
+            f"Model Name ({cls._current_config.get('model_name', 'llama3')})",
+            "Back to main menu"
+        ]
         
         setting = questionary.select(
             "Select a setting to edit:",

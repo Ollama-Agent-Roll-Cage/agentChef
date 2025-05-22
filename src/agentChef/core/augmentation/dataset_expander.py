@@ -10,7 +10,7 @@ import random
 
 # Import the PandasQueryIntegration
 try:
-    from src.agentChef.llamaindex.pandas_query import PandasQueryIntegration, OllamaLlamaIndexIntegration
+    from agentChef.core.llamaindex.pandas_query import PandasQueryIntegration, OllamaLlamaIndexIntegration
     HAS_QUERY_INTEGRATION = True
 except ImportError:
     HAS_QUERY_INTEGRATION = False

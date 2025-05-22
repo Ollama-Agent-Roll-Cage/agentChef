@@ -734,7 +734,7 @@ def main():
             return 1
         
         # Import UI classes here to avoid dependency if not needed
-        from agentChef.ui_components.ui_module import RagchefUI
+        from agentChef.core.ui_components.RagchefUI.ui_module import RagchefUI
         
         app = QApplication(sys.argv)
         ui = RagchefUI(manager)

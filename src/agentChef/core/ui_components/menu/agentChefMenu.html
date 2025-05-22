@@ -5,6 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agent Chef - Cosmic Culinary Wizardry</title>
   <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
+  <!-- Move QWebChannel script to head and ensure it loads first -->
+  <script type="text/javascript" src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <!-- Add defer attribute to ensure it loads after QWebChannel -->
+  <script defer>
+    // Initialize WebChannel when document is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof QWebChannel === 'undefined') {
+        console.error('QWebChannel not loaded');
+        return;
+      }
+      
+      new QWebChannel(qt.webChannelTransport, function(channel) {
+        window.backend = channel.objects.backend;
+        console.log("WebChannel initialized with backend bridge");
+      });
+    });
+
+    function launchRagchef() {
+      if (window.backend) {
+        console.log("Triggering wizard launch");
+        window.backend.triggerWizard();
+      } else {
+        console.error("Backend not initialized");
+      }
+    }
+  </script>
   <style>
     body, html {
       margin: 0;
@@ -213,7 +239,7 @@
     </header>
 
     <div class="menu-container">
-      <button class="gradient-button" onclick="window.backend && window.backend.triggerWizard()">
+      <button class="gradient-button" onclick="launchRagchef()">
         <div class="gradient-bg"></div>
         <span class="button-text">RAGChef Wizard</span>
       </button>
@@ -275,19 +301,6 @@
       }
       
       drawStars();
-    });
-
-    // Add WebChannel initialization
-    document.addEventListener('DOMContentLoaded', () => {
-      // Initialize WebChannel when it's available
-      if (window.QWebChannel) {
-        new QWebChannel(qt.webChannelTransport, function(channel) {
-          window.backend = channel.objects.backend;
-          console.log("WebChannel initialized with backend bridge");
-        });
-      } else {
-        console.warn("QWebChannel not available");
-      }
     });
   </script>
 </body>

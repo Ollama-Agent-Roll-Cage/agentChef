@@ -6,10 +6,11 @@ from pathlib import Path
 from agentChef.core.chefs.ragchef import ResearchManager
 from agentChef.cli.help_texts import RESEARCH_GROUP_HELP
 from agentChef.utils.const import SUCCESS
+from agentChef.core.llamaindex.pandas_query import PandasQueryIntegration
 
 @click.group()
 def research():
-    """Research operations for finding and analyzing content."""
+    """Research and dataset generation operations."""
     pass
 
 @research.command()
@@ -21,18 +22,13 @@ def topic(topic: str, max_papers: int, include_github: bool, output: Path):
     """Research a specific topic."""
     manager = ResearchManager()
     
-    # Run async research in event loop
-    loop = asyncio.get_event_loop()
-    result = loop.run_until_complete(
-        manager.research_topic(
-            topic=topic,
-            max_papers=max_papers,
-            include_github=include_github,
-            callback=lambda msg: click.echo(msg)
-        )
-    )
+    result = asyncio.run(manager.research_topic(
+        topic=topic,
+        max_papers=max_papers,
+        include_github=include_github,
+        callback=lambda msg: click.echo(msg)
+    ))
     
-    # Save results if output specified
     if output:
         output.parent.mkdir(parents=True, exist_ok=True)
         with open(output, "w") as f:
@@ -42,23 +38,25 @@ def topic(topic: str, max_papers: int, include_github: bool, output: Path):
     return SUCCESS
 
 @research.command()
+@click.option("--input", type=Path, required=True, help="Input content file")
 @click.option("--turns", default=3, help="Number of conversation turns")
 @click.option("--expand", default=2, help="Expansion factor")
 @click.option("--clean/--no-clean", default=True, help="Clean output")
 @click.option("--output", type=Path, help="Output file")
-def generate(turns: int, expand: int, clean: bool, output: Path):
-    """Generate conversation dataset."""
+def generate(input: Path, turns: int, expand: int, clean: bool, output: Path):
+    """Generate conversation dataset using AgentChef."""
     manager = ResearchManager()
     
-    loop = asyncio.get_event_loop()
-    result = loop.run_until_complete(
-        manager.generate_conversation_dataset(
-            num_turns=turns,
-            expansion_factor=expand,
-            clean=clean,
-            callback=lambda msg: click.echo(msg)
-        )
-    )
+    with open(input) as f:
+        content = f.read()
+    
+    result = asyncio.run(manager.generate_conversation_dataset(
+        papers=[{"content": content}],
+        num_turns=turns,
+        expansion_factor=expand,
+        clean=clean,
+        callback=lambda msg: click.echo(msg)
+    ))
     
     if output:
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -74,8 +72,6 @@ def generate(turns: int, expand: int, clean: bool, output: Path):
 @click.option("--output", type=Path, help="Output file for query results")
 def query(query: str, dataset: Path, output: Path):
     """Query a dataset using natural language."""
-    from agentChef.core.llamaindex.pandas_query import PandasQueryIntegration
-    
     query_engine = PandasQueryIntegration()
     
     # Load dataset

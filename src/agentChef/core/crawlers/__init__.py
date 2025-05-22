@@ -4,12 +4,14 @@ from .crawlers_module import (
     WebCrawlerWrapper,
     ArxivSearcher,
     DuckDuckGoSearcher,
-    GitHubCrawler
+    GitHubCrawler,
+    ParquetStorageWrapper
 )
 
 __all__ = [
     'WebCrawlerWrapper',
     'ArxivSearcher', 
     'DuckDuckGoSearcher',
-    'GitHubCrawler'
+    'GitHubCrawler',
+    'ParquetStorageWrapper'
 ]

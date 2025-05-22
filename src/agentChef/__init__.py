@@ -16,23 +16,27 @@ Main Components:
 All components use local Ollama models, with no external API dependencies.
 """
 
-__version__ = '0.2.7'
+__version__ = '0.2.8'
 
 # Import main components
 try:
+    import logging
+    from .core.chefs.ragchef import ResearchManager
+    from .core.chefs.base_chef import BaseChef
+    from .core.ui_components.RagchefUI.ui_module import RagchefUI
+    from .core.ui_components.menu_module import AgentChefMenu
+    from .core.augmentation.dataset_expander import DatasetExpander
+    from .core.classification.dataset_cleaner import DatasetCleaner
+    from .core.classification.classification import Classifier
     from .core.crawlers.crawlers_module import (
-        WebCrawler, 
-        ArxivSearcher, 
-        DuckDuckGoSearcher, 
-        GHCrawler
+        WebCrawlerWrapper,
+        ArxivSearcher,
+        DuckDuckGoSearcher,
+        GitHubCrawler
     )
-    
-    from .generation.conversation_generator import OllamaConversationGenerator
-    from .augmentation.dataset_expander import DatasetExpander
-    from .classification.dataset_cleaner import DatasetCleaner
-    from .llamaindex.pandas_query import PandasQueryIntegration, OllamaLlamaIndexIntegration
-    from .chefs.ragchef import ResearchManager
-    from .ollama.ollama_interface import OllamaInterface
+    from .core.generation.conversation_generator import OllamaConversationGenerator
+    from .core.llamaindex.pandas_query import PandasQueryIntegration, OllamaLlamaIndexIntegration
+    from .core.ollama.ollama_interface import OllamaInterface
 except ImportError as e:
     import logging
     logging.warning(f"Error importing ragchef components: {e}")
@@ -48,18 +52,18 @@ except ImportError:
 
 # Optional UI components
 try:
-    from .ui_components.ui_module import RagchefUI
+    from .core.ui_components.RagchefUI.ui_module import RagchefUI
     HAS_UI = True
 except ImportError:
     HAS_UI = False
 
-# Add resource path handling
+# Update resource paths
 import os
 from pathlib import Path
 
 # Define package paths
 PACKAGE_DIR = Path(__file__).parent
-MENU_HTML_PATH = PACKAGE_DIR / "agentChefMenu.html"
+MENU_HTML_PATH = PACKAGE_DIR / "core" / "ui_components" / "menu" / "agentChefMenu.html"
 DOCS_DIR = PACKAGE_DIR / "docs"
 
 # Create docs directory if needed
@@ -82,10 +86,12 @@ __all__ = [
     'OllamaLlamaIndexIntegration',
     'ResearchManager',
     'OllamaInterface',
-    'WebCrawler', 
+    'WebCrawlerWrapper', 
     'ArxivSearcher', 
     'DuckDuckGoSearcher', 
-    'GHCrawler',
+    'GitHubCrawler',
     'RagchefUI',
+    'BaseChef',
     'AgentChefMenu',
+    'Classifier'
 ]

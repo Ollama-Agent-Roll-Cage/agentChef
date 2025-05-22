@@ -9,10 +9,12 @@ import numpy as np
 
 # Import the PandasQueryIntegration
 try:
-    from src.agentChef.llamaindex.pandas_query import PandasQueryIntegration, OllamaLlamaIndexIntegration
+    from agentChef.core.llamaindex.pandas_query import PandasQueryIntegration, OllamaLlamaIndexIntegration
     HAS_QUERY_INTEGRATION = True
 except ImportError:
     HAS_QUERY_INTEGRATION = False
+
+from agentChef.core.crawlers.crawlers_module import ParquetStorageWrapper
 
 class DatasetCleaner:
     """
@@ -22,7 +24,7 @@ class DatasetCleaner:
     Works alongside DatasetExpander to ensure high-quality conversation data.
     """
     
-    def __init__(self, ollama_interface, output_dir="./cleaned_output", use_llama_index=True, openai_api_key=None):
+    def __init__(self, ollama_interface, output_dir="./cleaned_output", use_llama_index=True):
         """
         Initialize the DatasetCleaner.
         
@@ -30,12 +32,10 @@ class DatasetCleaner:
             ollama_interface: An interface to Ollama for generating text and analyzing datasets
             output_dir (str): Directory to save cleaned datasets
             use_llama_index (bool): Whether to use LlamaIndex for advanced DataFrame querying
-            openai_api_key (str, optional): OpenAI API key for LlamaIndex integration
         """
         self.ollama_interface = ollama_interface
         self.output_dir = output_dir
         self.use_llama_index = use_llama_index
-        self.openai_api_key = openai_api_key
         
         os.makedirs(output_dir, exist_ok=True)
         self.logger = logging.getLogger(__name__)
@@ -48,8 +48,8 @@ class DatasetCleaner:
         
         if use_llama_index and HAS_QUERY_INTEGRATION:
             try:
+                # Remove openai_api_key, just use ollama integration
                 self.pandas_query = PandasQueryIntegration(
-                    openai_api_key=openai_api_key,
                     verbose=True,
                     synthesize_response=True
                 )
@@ -130,7 +130,8 @@ class DatasetCleaner:
                 orig_insights = self.pandas_query.generate_dataset_insights(orig_df, num_insights=3)
                 expanded_insights = self.pandas_query.generate_dataset_insights(expanded_df, num_insights=3)
                 
-                # Compare the datasets
+                # Compare the datasets using Parquet storage for efficiency
+                storage = ParquetStorageWrapper()
                 comparison = self.pandas_query.compare_datasets(
                     orig_df, expanded_df,
                     df1_name="Original", df2_name="Expanded",

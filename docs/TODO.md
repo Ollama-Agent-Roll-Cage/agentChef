@@ -34,3 +34,7 @@ Please help me fix the pyqt6 ragchef ui, ineed to have the ui bee changed up bas
 big prompt
 
 You are Merlin, the grandmaster wizard, you will always fully help your grad students finish their research projects, here is mine. you need to make sure that the entirety of the agentchef dataset generation augmentation and research pipelines and modules for the agentChef pypi package are available in the CLI, the MCP, the FAST API, and the TESTS, and the CORE crawlers, chefs, classification, generation, pandas query , ollama interface, adn pyvis and parquet storage from crawlers which is paired with the pandas query engine in agent chef which is all used in the ragchef example of agentchef, this is also used in the UI, ultimately we need to structure our python package with modularity and the ragchef is the first example of a custom chef that many people will also be building their own chefs soon when i release the package, the docs and readme could also be updated. please merlin i need this finished great wizard
+
+please help me fix the mcp and cli and config editor to all use the agentchef stuff, you can use the agentchef api for the mcp, and the cli if that makes sense
+
+uv run agentChef --mode ui

@@ -11,9 +11,13 @@ import logging
 import pandas as pd
 from typing import Dict, List, Optional, Union, Any
 
-# LlamaIndex imports
-from llama_index.experimental.query_engine import PandasQueryEngine
-from llama_index.core import PromptTemplate
+# LlamaIndex imports - handle gracefully
+try:
+    from llama_index.experimental.query_engine import PandasQueryEngine
+    from llama_index.core import PromptTemplate
+    HAS_QUERY_ENGINE = True
+except ImportError:
+    HAS_QUERY_ENGINE = False
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -31,15 +35,20 @@ class PandasQueryIntegration:
             verbose (bool): Whether to print verbose output.
             synthesize_response (bool): Whether to synthesize a natural language response.
         """
+        if not HAS_QUERY_ENGINE:
+            logger.warning("PandasQueryEngine not available. Some features will be limited.")
+            
         self.verbose = verbose
         self.synthesize_response = synthesize_response
         
         # Check if we can use local models
         try:
-            import ollama
+            from agentChef.core.ollama.ollama_interface import OllamaInterface
+            self.ollama = OllamaInterface()
             self.use_local_models = True
         except ImportError:
             self.use_local_models = False
+            logger.warning("Local models not available. Some features will be limited.")
         
     def create_query_engine(self, df: pd.DataFrame, custom_instructions: Optional[str] = None) -> Any:
         """
@@ -274,7 +283,7 @@ class OllamaLlamaIndexIntegration:
         self.verbose = verbose
         
         # Check if LlamaIndex is available
-        if not HAS_LLAMA_INDEX:
+        if not HAS_QUERY_ENGINE:
             raise ImportError(
                 "LlamaIndex not installed. Install with: pip install llama-index llama-index-experimental"
             )
