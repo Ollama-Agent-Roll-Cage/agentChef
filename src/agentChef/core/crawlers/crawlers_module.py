@@ -98,127 +98,93 @@ class WebCrawlerWrapper:
 
 
 class ArxivSearcher:
-    """Class for searching and retrieving ArXiv papers.
-    
-    This is a wrapper around the oarc-crawlers ArxivCrawler class.
-    """
+    """Class for searching and retrieving ArXiv papers."""
     
     def __init__(self):
-        """Initialize the ArXiv searcher with the data directory."""
-        self.fetcher = ArxivCrawler(data_dir=DATA_DIR)
-        self.rate_limit_delay = 3  # seconds between requests
-    
-    @staticmethod
-    def extract_arxiv_id(url_or_id):
-        """Extract arXiv ID from a URL or direct ID string.
-        
-        Args:
-            url_or_id (str): ArXiv URL or direct ID
-            
-        Returns:
-            str: Extracted ArXiv ID
-            
-        Raises:
-            ValueError: If ID cannot be extracted
-        """
-        return ArxivCrawler.extract_arxiv_id(url_or_id)
-
-    async def fetch_paper_info(self, arxiv_id):
-        """Fetch paper metadata from arXiv API.
-        
-        Args:
-            arxiv_id (str): ArXiv paper ID
-            
-        Returns:
-            dict: Paper metadata
-            
-        Raises:
-            ValueError: If paper cannot be found
-            ConnectionError: If connection to ArXiv fails
-        """
-        return await self.fetcher.fetch_paper_info(arxiv_id)
-
-    async def format_paper_for_learning(self, paper_info):
-        """Format paper information for learning.
-        
-        Args:
-            paper_info (dict): Paper metadata
-            
-        Returns:
-            str: Formatted markdown text
-        """
-        # Use the same format as in the original ArxivSearcher
-        formatted_text = f"""# {paper_info['title']}
-
-**Authors:** {', '.join(paper_info['authors'])}
-
-**Published:** {paper_info['published'][:10]}
-
-**Categories:** {', '.join(paper_info['categories'])}
-
-## Abstract
-{paper_info['abstract']}
-
-**Links:**
-- [ArXiv Page]({paper_info['arxiv_url']})
-- [PDF Download]({paper_info['pdf_link']})
-"""
-        if 'comment' in paper_info and paper_info['comment']:
-            formatted_text += f"\n**Comments:** {paper_info['comment']}\n"
-            
-        if 'journal_ref' in paper_info and paper_info['journal_ref']:
-            formatted_text += f"\n**Journal Reference:** {paper_info['journal_ref']}\n"
-            
-        if 'doi' in paper_info and paper_info['doi']:
-            formatted_text += f"\n**DOI:** {paper_info['doi']}\n"
-            
-        return formatted_text
-
-    async def search(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
-        """Old search method for backward compatibility."""
-        return await self.search_papers(query, max_results=max_results)
+        self.fetcher = None
+        self.rate_limit_delay = 3
         
     async def search_papers(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
-        """
-        Search ArXiv for papers matching the query.
-        
-        Args:
-            query: Search query
-            max_results: Maximum number of results to return
+        """Search ArXiv for papers."""
+        if not self.fetcher:
+            logger.error("ArxivSearcher not initialized with fetcher")
+            return []
             
-        Returns:
-            List of paper metadata dictionaries
-        """
         try:
             papers = []
-            # The search method returns a dict not an async iterator
-            search_results = await self.fetcher.search(query, limit=max_results)
+            results = await self.fetcher.search(query, max_results=max_results)
             
-            # Process the results which should be in a list or similar structure
-            for paper in search_results.get('results', []):
-                papers.append({
-                    'title': paper.get('title', ''),
-                    'authors': paper.get('authors', []),
-                    'abstract': paper.get('abstract', ''),
-                    'categories': paper.get('categories', []),
-                    'arxiv_url': paper.get('arxiv_url', ''),
-                    'pdf_link': paper.get('pdf_link', ''),
-                    'published': paper.get('published', ''),
-                    'updated': paper.get('updated', ''),
-                    'arxiv_id': paper.get('arxiv_id', '')
-                })
+            # Handle both list and dictionary responses
+            if isinstance(results, dict):
+                entries = results.get('entries', [])
+            elif isinstance(results, list):
+                entries = results
+            else:
+                logger.error(f"Unexpected search results type: {type(results)}")
+                return []
                 
-                if len(papers) >= max_results:
-                    break
-                
-                # Add rate limiting delay
+            for entry in entries:
+                if isinstance(entry, dict):
+                    paper = {
+                        'title': entry.get('title', ''),
+                        'authors': entry.get('authors', []),
+                        'abstract': entry.get('abstract', ''),
+                        'categories': entry.get('categories', []),
+                        'arxiv_url': entry.get('arxiv_url', ''),
+                        'pdf_link': entry.get('pdf_link', ''),
+                        'published': entry.get('published', ''),
+                        'updated': entry.get('updated', ''),
+                        'arxiv_id': entry.get('arxiv_id', '')
+                    }
+                    papers.append(paper)
+                    
+                    if len(papers) >= max_results:
+                        break
+                        
                 await asyncio.sleep(self.rate_limit_delay)
-            
+                
             return papers
             
         except Exception as e:
             logger.error(f"Error searching ArXiv: {str(e)}")
             return []
+
+    async def format_paper_for_learning(self, paper: Dict[str, Any]) -> Dict[str, Any]:
+        """Format paper for learning."""
+        try:
+            formatted = {
+                'title': paper.get('title', ''),
+                'abstract': paper.get('abstract', ''),
+                'authors': paper.get('authors', []),
+                'content': paper.get('abstract', ''),  # Default to abstract if no content
+                'metadata': {
+                    'arxiv_id': paper.get('arxiv_id', ''),
+                    'categories': paper.get('categories', []),
+                    'published': paper.get('published', ''),
+                    'updated': paper.get('updated', ''),
+                    'arxiv_url': paper.get('arxiv_url', ''),
+                    'pdf_link': paper.get('pdf_link', '')
+                }
+            }
+            
+            # Try to fetch PDF content if available
+            if self.fetcher and paper.get('pdf_link'):
+                try:
+                    pdf_content = await self.fetcher.fetch_pdf(paper['pdf_link'])
+                    if pdf_content:
+                        formatted['content'] = pdf_content
+                except Exception as e:
+                    logger.warning(f"Could not fetch PDF: {str(e)}")
+                    
+            return formatted
+            
+        except Exception as e:
+            logger.error(f"Error formatting paper: {str(e)}")
+            return {
+                'title': paper.get('title', ''),
+                'content': paper.get('abstract', ''),
+                'metadata': {}
+            }
 
 
 # Update DuckDuckGo imports

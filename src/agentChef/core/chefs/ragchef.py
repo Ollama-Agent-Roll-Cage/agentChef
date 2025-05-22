@@ -119,11 +119,36 @@ class ResearchManager(BaseChef):
         for directory in [self.papers_dir, self.datasets_dir]:
             directory.mkdir(exist_ok=True, parents=True)
         
-        # Initialize components
-        self.web_crawler = WebCrawlerWrapper()
-        self.arxiv_searcher = ArxivSearcher()
-        self.ddg_searcher = DuckDuckGoSearcher()
-        self.github_crawler = GitHubCrawler(data_dir=str(self.data_dir))
+        # Initialize components with better error handling
+        try:
+            from agentChef.core.crawlers.crawlers_module import (
+                WebCrawlerWrapper, 
+                ArxivSearcher, 
+                DuckDuckGoSearcher, 
+                GitHubCrawler
+            )
+            from oarc_crawlers.arxiv import ArxivCrawler
+            
+            self.web_crawler = WebCrawlerWrapper()
+            self.arxiv_searcher = ArxivSearcher()
+            
+            # Initialize ArXiv crawler with retries and timeouts
+            arxiv_crawler = ArxivCrawler(
+                data_dir=str(self.data_dir),
+                max_retries=5,
+                timeout=30
+            )
+            self.arxiv_searcher.fetcher = arxiv_crawler
+            
+            self.ddg_searcher = DuckDuckGoSearcher()
+            self.github_crawler = GitHubCrawler(data_dir=str(self.data_dir))
+            
+        except ImportError as e:
+            logger.warning(f"Some crawlers not available: {str(e)}")
+            self.web_crawler = None
+            self.arxiv_searcher = None
+            self.ddg_searcher = None
+            self.github_crawler = None
         
         # Initialize processing components if Ollama is available
         if HAS_OLLAMA:
@@ -188,12 +213,13 @@ class ResearchManager(BaseChef):
             # Format paper information
             formatted_papers = []
             for paper in arxiv_papers:
-                update_progress(f"Processing paper: {paper.get('title', 'Unknown')}")
-                formatted_info = await self.arxiv_searcher.format_paper_for_learning(paper)
-                formatted_papers.append({
-                    "paper_info": paper,
-                    "formatted_info": formatted_info
-                })
+                update_progress(f"Processing paper: {paper.get('title', 'Untitled')}")
+                try:
+                    formatted_info = await self.arxiv_searcher.format_paper_for_learning(paper)
+                    formatted_papers.append(formatted_info)
+                except Exception as e:
+                    logger.error(f"Error formatting paper: {str(e)}")
+                    continue
             
             self.research_state["processed_papers"] = formatted_papers
             

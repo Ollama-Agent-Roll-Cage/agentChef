@@ -2,7 +2,7 @@
 
 from .crawlers_module import (
     WebCrawlerWrapper,
-    ArxivSearcher,
+    ArxivCrawler,
     DuckDuckGoSearcher,
     GitHubCrawler,
     ParquetStorageWrapper
@@ -10,7 +10,7 @@ from .crawlers_module import (
 
 __all__ = [
     'WebCrawlerWrapper',
-    'ArxivSearcher', 
+    'ArxivCrawler', 
     'DuckDuckGoSearcher',
     'GitHubCrawler',
     'ParquetStorageWrapper'
