@@ -55,7 +55,7 @@ class OllamaConversationGenerator:
     def generate_conversation(self, content, num_turns=3, conversation_context="research",
                            hedging_level="balanced", conversation_history=None):
         """
-        Generate a conversation about the given content.
+        Generate a conversation about the given content using separate human and AI prompts.
         
         Args:
             content (str): The content to generate a conversation about.
@@ -73,70 +73,200 @@ class OllamaConversationGenerator:
         # Limit content length for the prompt
         truncated_content = content[:2000] if len(content) > 2000 else content
         
-        # Build hedging instructions
-        hedging_instructions = self._get_hedging_instructions(hedging_level)
-        
-        system_prompt = f"""You are an assistant helping to create synthetic training data. 
-        Generate a realistic conversation between a human and an AI assistant about the following {conversation_context} content:
-        
-        {truncated_content}
-        
-        The conversation should:
-        1. Include exactly {num_turns} turns (human question, AI response).
-        2. Be related to the content provided.
-        3. Show the human asking questions and the AI providing helpful responses.
-        4. Format the output as a JSON list with "from" (either "human" or "gpt") and "value" fields.
-        
-        {hedging_instructions}
-        
-        Return ONLY the JSON array without explanations or markdown formatting."""
-        
-        # If we have conversation history, incorporate it
-        if conversation_history:
-            system_prompt += f"\n\nBuild upon this existing conversation:\n{json.dumps(conversation_history, indent=2)}"
+        # Build the conversation turn by turn
+        conversation = conversation_history[:] if conversation_history else []
         
         try:
-            response = self.ollama.chat(
-                messages=[{"role": "system", "content": system_prompt}],
-            )
+            for turn in range(num_turns):
+                # Generate human question
+                if turn == 0 and not conversation_history:
+                    # First question - start the conversation
+                    human_question = self._generate_human_question(
+                        content=truncated_content,
+                        conversation_context=conversation_context,
+                        conversation_history=conversation,
+                        is_first_question=True
+                    )
+                else:
+                    # Follow-up question based on conversation so far
+                    human_question = self._generate_human_question(
+                        content=truncated_content,
+                        conversation_context=conversation_context,
+                        conversation_history=conversation,
+                        is_first_question=False
+                    )
+                
+                if not human_question:
+                    self.logger.warning(f"Failed to generate human question for turn {turn + 1}")
+                    break
+                    
+                conversation.append({"from": "human", "value": human_question})
+                
+                # Generate AI response
+                ai_response = self._generate_ai_response(
+                    content=truncated_content,
+                    conversation_context=conversation_context,
+                    conversation_history=conversation,
+                    hedging_level=hedging_level
+                )
+                
+                if not ai_response:
+                    self.logger.warning(f"Failed to generate AI response for turn {turn + 1}")
+                    # Remove the human question if we can't generate a response
+                    conversation.pop()
+                    break
+                    
+                conversation.append({"from": "gpt", "value": ai_response})
             
-            content = response['message']['content']
-            
-            # Extract JSON from the response
-            json_match = re.search(r'\[\s*{\s*"from":.+}\s*\]', content, re.DOTALL)
-            if json_match:
-                conversation_json = json_match.group(0)
-                # Validate and clean JSON
-                try:
-                    conversation = json.loads(conversation_json)
-                    self._validate_conversation_format(conversation)
-                    return conversation
-                except json.JSONDecodeError:
-                    self.logger.warning("Error parsing JSON response, trying to clean...")
-                    # Try to clean common JSON format issues
-                    cleaned_json = re.sub(r'(\w+):', r'"\1":', conversation_json)
-                    cleaned_json = re.sub(r'\'', r'"', cleaned_json)
-                    try:
-                        conversation = json.loads(cleaned_json)
-                        self._validate_conversation_format(conversation)
-                        return conversation
-                    except Exception as e:
-                        self.logger.error(f"Failed to parse JSON after cleaning: {e}")
-                        return None
+            # Validate the final conversation
+            if conversation:
+                self._validate_conversation_format(conversation)
+                return conversation
             else:
-                # If no JSON pattern found, try to extract from the whole content
-                try:
-                    conversation = json.loads(content)
-                    self._validate_conversation_format(conversation)
-                    return conversation
-                except:
-                    self.logger.error("JSON format not found in response")
-                    return None
+                return None
                 
         except Exception as e:
             self.logger.error(f"Error generating conversation: {str(e)}")
             return None
-    
+
+    def _generate_human_question(self, content, conversation_context, conversation_history, is_first_question=False):
+        """Generate a human question based on the content and conversation history."""
+        
+        if is_first_question:
+            human_prompt = f"""You are a curious human asking questions about {conversation_context} content. 
+            You have just been presented with the following information:
+
+            {content}
+
+            Generate a natural, engaging question that a human would ask to start learning about this topic. 
+            The question should:
+            - Be genuinely curious and show interest in understanding the content
+            - Be specific enough to elicit a detailed response
+            - Sound like how a real person would phrase a question
+            - Be appropriate for the {conversation_context} context
+            
+            Return ONLY the question text, nothing else."""
+        else:
+            # Build conversation context for follow-up questions
+            conversation_text = ""
+            for turn in conversation_history:
+                role = "Human" if turn["from"] == "human" else "AI Assistant"
+                conversation_text += f"{role}: {turn['value']}\n\n"
+            
+            human_prompt = f"""You are a curious human continuing a conversation about {conversation_context} content.
+
+            Original Content:
+            {content}
+
+            Conversation so far:
+            {conversation_text}
+
+            Generate a natural follow-up question that:
+            - Builds on what has been discussed already
+            - Shows deeper curiosity or asks for clarification/examples
+            - Sounds like how a real person would continue the conversation
+            - Doesn't repeat what has already been asked
+            - Is appropriate for the {conversation_context} context
+            
+            Return ONLY the question text, nothing else."""
+        
+        try:
+            response = self.ollama.chat(
+                messages=[{"role": "system", "content": human_prompt}]
+            )
+            question = response['message']['content'].strip()
+            
+            # Clean up any extra formatting
+            question = self._clean_generated_text(question)
+            
+            # Ensure it ends with a question mark
+            if question and not question.endswith('?'):
+                question += '?'
+                
+            return question if question else None
+            
+        except Exception as e:
+            self.logger.error(f"Error generating human question: {str(e)}")
+            return None
+
+    def _generate_ai_response(self, content, conversation_context, conversation_history, hedging_level):
+        """Generate an AI response based on the content and conversation history."""
+        
+        # Get hedging instructions
+        hedging_instructions = self._get_hedging_instructions(hedging_level)
+        
+        # Build conversation context
+        conversation_text = ""
+        for turn in conversation_history:
+            role = "Human" if turn["from"] == "human" else "AI Assistant"
+            conversation_text += f"{role}: {turn['value']}\n\n"
+        
+        # Get the latest human question
+        latest_question = conversation_history[-1]["value"] if conversation_history else "Please explain this content."
+        
+        ai_prompt = f"""You are a helpful AI assistant answering questions about {conversation_context} content.
+
+        Original Content:
+        {content}
+
+        Conversation so far:
+        {conversation_text}
+
+        The human just asked: "{latest_question}"
+
+        Provide a helpful, informative response that:
+        - Directly addresses the human's question
+        - Is based on the provided content
+        - Is educational but conversational in tone
+        - Shows expertise while remaining accessible
+        - Builds naturally on the conversation flow
+        
+        {hedging_instructions}
+        
+        Return ONLY the response text, nothing else."""
+        
+        try:
+            response = self.ollama.chat(
+                messages=[{"role": "system", "content": ai_prompt}]
+            )
+            answer = response['message']['content'].strip()
+            
+            # Clean up any extra formatting
+            answer = self._clean_generated_text(answer)
+            
+            return answer if answer else None
+            
+        except Exception as e:
+            self.logger.error(f"Error generating AI response: {str(e)}")
+            return None
+
+    def _clean_generated_text(self, text):
+        """Clean generated text of common formatting issues."""
+        if not text:
+            return text
+            
+        # Remove common prefixes that might leak through
+        prefixes_to_remove = [
+            "Question:", "Answer:", "Response:", "Human:", "AI:", "Assistant:",
+            "Q:", "A:", "Here's a question:", "Here's the answer:", "I would ask:",
+            "My response would be:", "The question is:", "The answer is:"
+        ]
+        
+        for prefix in prefixes_to_remove:
+            if text.lower().startswith(prefix.lower()):
+                text = text[len(prefix):].strip()
+        
+        # Remove quotes that might wrap the entire response
+        if text.startswith('"') and text.endswith('"'):
+            text = text[1:-1].strip()
+        if text.startswith("'") and text.endswith("'"):
+            text = text[1:-1].strip()
+        
+        # Remove any remaining extra whitespace
+        text = re.sub(r'\s+', ' ', text).strip()
+        
+        return text
+
     def _get_hedging_instructions(self, hedging_level="balanced"):
         """
         Get instructions for hedging in AI responses based on the specified level.
