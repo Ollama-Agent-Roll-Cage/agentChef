@@ -127,28 +127,39 @@ class ResearchManager(BaseChef):
                 DuckDuckGoSearcher, 
                 GitHubCrawler
             )
-            from oarc_crawlers.arxiv import ArxivCrawler
             
             self.web_crawler = WebCrawlerWrapper()
             self.arxiv_searcher = ArxivSearcher()
-            
-            # Initialize ArXiv crawler with retries and timeouts
-            arxiv_crawler = ArxivCrawler(
-                data_dir=str(self.data_dir),
-                max_retries=5,
-                timeout=30
-            )
-            self.arxiv_searcher.fetcher = arxiv_crawler
-            
             self.ddg_searcher = DuckDuckGoSearcher()
             self.github_crawler = GitHubCrawler(data_dir=str(self.data_dir))
             
+            logger.info("Successfully initialized all crawlers")
+            
         except ImportError as e:
-            logger.warning(f"Some crawlers not available: {str(e)}")
-            self.web_crawler = None
-            self.arxiv_searcher = None
-            self.ddg_searcher = None
-            self.github_crawler = None
+            logger.error(f"Failed to import crawlers: {str(e)}")
+            # Create dummy implementations to prevent None errors
+            self.web_crawler = type('DummyWebCrawler', (), {
+                'text_search': lambda self, *args, **kwargs: asyncio.coroutine(lambda: [])()
+            })()
+            self.arxiv_searcher = type('DummyArxivSearcher', (), {
+                'search_papers': lambda self, *args, **kwargs: asyncio.coroutine(lambda: [])()
+            })()
+            self.ddg_searcher = type('DummyDDGSearcher', (), {
+                'search': lambda self, *args, **kwargs: asyncio.coroutine(lambda: [])()
+            })()
+            self.github_crawler = type('DummyGitHubCrawler', (), {
+                'search_repositories': lambda self, *args, **kwargs: asyncio.coroutine(lambda: [])()
+            })()
+        
+        # Initialize web searchers
+        try:
+            self.web_searcher = DuckDuckGoSearcher()
+            if not self.web_searcher.searcher:
+                logger.warning("DuckDuckGo searcher not available")
+                self.web_searcher = None
+        except Exception as e:
+            logger.error(f"Failed to initialize web searcher: {e}")
+            self.web_searcher = None
         
         # Initialize processing components if Ollama is available
         if HAS_OLLAMA:
@@ -203,9 +214,17 @@ class ResearchManager(BaseChef):
         # Simplified ArXiv search query
         try:
             update_progress(f"Searching ArXiv for: {topic}")
-            # Use basic topic search instead of complex queries
-            paper_info = await self.arxiv_searcher.search_papers(topic, max_results=max_papers)
-            arxiv_papers = paper_info if paper_info else []
+            # Check if arxiv_searcher is available and not None
+            if self.arxiv_searcher and hasattr(self.arxiv_searcher, 'search_papers'):
+                paper_info = await self.arxiv_searcher.search_papers(topic, max_results=max_papers)
+                arxiv_papers = paper_info if paper_info else []
+            else:
+                logger.warning("ArXiv searcher not available")
+                arxiv_papers = []
+            
+        except Exception as e:
+            logger.error(f"Error searching ArXiv: {str(e)}")
+            arxiv_papers = []
             
             self.research_state["arxiv_papers"] = arxiv_papers
             update_progress(f"Found {len(arxiv_papers)} relevant ArXiv papers")
@@ -228,18 +247,24 @@ class ResearchManager(BaseChef):
             arxiv_papers = []
             formatted_papers = []
 
-        # 4. Perform web search with fallback
+        # 4. Perform web search with proper fallback
         update_progress(f"Performing web search for: {topic}")
         try:
-            search_results = await self.ddg_searcher.text_search(topic, max_results=max_search_results)
+            # Use the DDG searcher directly since it's initialized
+            if self.ddg_searcher and hasattr(self.ddg_searcher, 'text_search'):
+                web_results = await self.ddg_searcher.text_search(topic, max_results=max_search_results)
+                if web_results:
+                    update_progress(f"Found {len(web_results)} web search results")
+                else:
+                    update_progress("No web search results found")
+            else:
+                logger.warning("No web searcher available")
+                web_results = []
+                
         except Exception as e:
-            update_progress(f"Web search failed, using basic results: {str(e)}")
-            search_results = [{
-                "title": "Web search unavailable",
-                "link": "",
-                "snippet": "Web search functionality is currently unavailable. Please try again later."
-            }]
-        self.research_state["search_results"] = search_results
+            logger.error(f"Error in web search: {str(e)}")
+            web_results = []
+        self.research_state["search_results"] = web_results
         
         # 5. Process GitHub repositories if requested
         if include_github and github_repos:

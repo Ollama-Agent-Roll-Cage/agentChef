@@ -38,3 +38,20 @@ You are Merlin, the grandmaster wizard, you will always fully help your grad stu
 please help me fix the mcp and cli and config editor to all use the agentchef stuff, you can use the agentchef api for the mcp, and the cli if that makes sense
 
 uv run agentChef --mode ui
+
+they need to be more fluid and have more small droplets that fall off of them, more goopy more fluid its too geometric, the lava should form more slowly at the top and make larger goops and it should be more random in size and falling amounts, make sure they stick more the the ceiling, should fill a little faster and the large sea at the bottom should be more intelligent when the quantum lava droplets merge into it, and parts of the lava can seperate in the drops like if its attached to the ceiling parts of the mesh could drip off before a large glob forms. and the seas at the bottom should be more like a particle mesh as well, or at least the surface of it where the drops will sploosh and combine
+
+add agent chef logo in the top left to take back to main menu
+add parquet viewer
+add wire diagram chef confuring
+add ui api config agent -frontend
+add latex psuedocode numpy agent -backend
+
+agent for dylans maths
+
+quantum physics agent
+chemistry agent
+
+super math inventor agent
+
+divisor wave math plotter agent
