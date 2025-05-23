@@ -11,8 +11,8 @@ import sys
 import json
 import asyncio
 import threading
-import random  # Add this import
-import math  # Add this import
+import random
+import math
 from pathlib import Path
 import ollama
 
@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 UTC = timezone.utc
 
 import logging
-logger = logging.getLogger(__name__)  # Add this line
+logger = logging.getLogger(__name__)
 import webbrowser
 from typing import Dict, List, Any, Optional, Union, Tuple
 
@@ -29,7 +29,7 @@ try:
         QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout, QHBoxLayout,
         QPushButton, QLabel, QLineEdit, QTextEdit, QComboBox, QFileDialog,
         QProgressBar, QSpinBox, QCheckBox, QGroupBox, QFormLayout, QSplitter,
-        QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox, QDialog
+        QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox, QDialog, QSlider
     )
     from PyQt6.QtCore import Qt, QThread, pyqtSignal, pyqtSlot, QSize, QTimer, QPointF
     from PyQt6.QtGui import QFont, QIcon, QTextCursor, QPainter, QColor, QBrush, QPen
@@ -96,163 +96,216 @@ class QuantumMeshParticle:
         self.y = y
         self.mesh_id = mesh_id or random.randint(1000, 9999)
         
-        # Quantum wave properties - reduced for performance
-        self.wave_amplitude = random.uniform(1.0, 2.5)
-        self.wave_frequency = random.uniform(0.01, 0.04)
+        # Enhanced quantum wave properties for more fluid behavior
+        self.wave_amplitude = random.uniform(2.0, 4.0)  # Increased amplitude
+        self.wave_frequency = random.uniform(0.02, 0.08)  # More variation
         self.wave_phase = random.uniform(0, 2 * math.pi)
-        self.wave_speed = random.uniform(0.02, 0.06)
+        self.wave_speed = random.uniform(0.03, 0.12)  # Faster waves for more fluid motion
         
-        # Mesh connectivity - reduced connections for performance
+        # Mesh connectivity - more connections for better fluidity
         self.connections = []
-        self.influence_radius = random.uniform(15, 25)  # Smaller radius
-        self.mesh_strength = random.uniform(0.8, 1.0)
+        self.influence_radius = random.uniform(20, 35)  # Larger radius for better connectivity
+        self.mesh_strength = random.uniform(0.6, 0.9)  # More flexible connections
         
-        # Physics properties
-        self.velocity_x = random.uniform(-0.05, 0.05)
-        self.velocity_y = random.uniform(0.02, 0.15)
-        self.mass = random.uniform(0.9, 1.1)
-        self.viscosity = random.uniform(0.9, 0.98)  # Higher viscosity for gooey effect
+        # Enhanced physics properties for gooey behavior
+        self.velocity_x = random.uniform(-0.08, 0.08)
+        self.velocity_y = random.uniform(0.01, 0.12)
+        self.mass = random.uniform(0.7, 1.3)  # More mass variation
+        self.viscosity = random.uniform(0.85, 0.95)  # Lower viscosity for more fluid motion
         
-        # Sticking properties
+        # Enhanced sticking properties
         self.is_stuck = False
         self.stick_timer = 0
-        self.stick_strength = random.uniform(0.7, 1.0)
+        self.stick_strength = random.uniform(0.8, 1.0)
+        self.detachment_threshold = random.uniform(0.3, 0.7)  # Easier detachment
         
-        # Temperature and visual
-        self.temperature = random.uniform(0.8, 1.0)
-        self.glow_intensity = random.uniform(0.6, 1.0)
+        # Temperature and visual with more variation
+        self.temperature = random.uniform(0.7, 1.0)
+        self.glow_intensity = random.uniform(0.4, 1.0)
+        self.fluidity = random.uniform(0.8, 1.0)  # New fluidity property
 
 class FluidMeshDrop:
-    """A fluid mesh drop with improved gooey physics."""
+    """A fluid mesh drop with enhanced gooey physics."""
     
-    def __init__(self, center_x, center_y, size=None):
+    def __init__(self, center_x, center_y, size=None, particle_density=1.0):
         self.center_x = center_x
         self.center_y = center_y
-        self.size = size or random.uniform(12, 25)  # Smaller drops for performance
+        self.particle_density = particle_density  # Add this parameter
+        # More random size variation for organic feel
+        self.size = size or random.uniform(8, 35)  # Wider size range
         self.mesh_particles = []
         self.trail_particles = []
+        self.detached_particles = []  # New: particles that detach during formation
         
-        # Raindrop physics
-        self.velocity_x = random.uniform(-0.1, 0.1)
-        self.velocity_y = random.uniform(0.05, 0.2)
+        # Generate unique ID for this drop
+        self.drop_id = random.randint(1000, 9999)
+        
+        # Enhanced raindrop physics for more fluid behavior
+        self.velocity_x = random.uniform(-0.15, 0.15)
+        self.velocity_y = random.uniform(0.01, 0.15)  # Slower initial formation
         self.acceleration_y = 0
-        self.surface_tension = random.uniform(1.2, 1.8)  # Higher surface tension
-        self.drag_coefficient = random.uniform(0.015, 0.03)
+        self.surface_tension = random.uniform(0.8, 1.5)  # Lower surface tension
+        self.drag_coefficient = random.uniform(0.01, 0.025)
         
-        # Mesh deformation - smoother
+        # Enhanced mesh deformation for more organic movement
         self.deformation_phase = random.uniform(0, 2 * math.pi)
-        self.deformation_speed = random.uniform(0.02, 0.08)
-        self.jiggle_amplitude = random.uniform(0.8, 1.5)  # Reduced jiggle
+        self.deformation_speed = random.uniform(0.04, 0.15)  # Faster deformation
+        self.jiggle_amplitude = random.uniform(1.2, 2.5)  # More jiggle
         
-        # Gooey properties
-        self.gooiness = random.uniform(0.8, 1.0)
+        # Enhanced gooey properties
+        self.gooiness = random.uniform(0.7, 1.0)
         self.stretch_factor = 1.0
         self.is_stretching = False
+        self.separation_threshold = random.uniform(30, 50)  # Distance before separation
         
-        # Sticking properties
-        self.ceiling_stick_time = random.uniform(60, 180)  # Frames to stick
+        # Enhanced sticking properties
+        self.ceiling_stick_time = random.uniform(120, 300)  # Longer stick time
         self.is_stuck_to_ceiling = False
         self.stick_timer = 0
+        self.formation_timer = random.uniform(60, 180)  # Time to form before dropping
         
-        # Visual properties
-        self.temperature = random.uniform(0.7, 1.0)
-        self.opacity = random.uniform(0.85, 1.0)
+        # Visual properties with more variation
+        self.temperature = random.uniform(0.6, 1.0)
+        self.opacity = random.uniform(0.75, 1.0)
+        self.blob_complexity = random.randint(8, 16)  # More complex shapes
         
-        # Create simpler mesh for performance
-        self._create_optimized_mesh_structure()
+        # Create enhanced mesh for better fluidity
+        self._create_enhanced_mesh_structure()
     
-    def _create_optimized_mesh_structure(self):
-        """Create optimized mesh structure with fewer particles."""
-        # Fewer main body mesh points
-        num_body_points = max(4, int(self.size / 6))  # Reduced points
+    def get_id(self):
+        """Get the unique ID for this drop."""
+        return self.drop_id
+    
+    def _create_enhanced_mesh_structure(self):
+        """Create enhanced mesh structure with more organic connectivity."""
+        # Scale mesh points based on particle density
+        base_body_points = max(6, int(self.size / 4))
+        num_body_points = int(base_body_points * self.particle_density)
+        num_body_points = max(3, min(num_body_points, 24))  # Clamp between 3 and 24
+        
         for i in range(num_body_points):
             angle = (2 * math.pi * i) / num_body_points
-            radius = self.size * random.uniform(0.4, 0.6)
+            # More organic radius variation
+            radius_var = random.uniform(0.3, 0.8)
+            radius = self.size * radius_var
             
-            x = self.center_x + math.cos(angle) * radius
-            y = self.center_y + math.sin(angle) * radius
+            # Add noise for organic shape
+            angle_noise = random.uniform(-0.3, 0.3)
+            radius_noise = random.uniform(-0.2, 0.2) * self.size
+            
+            x = self.center_x + math.cos(angle + angle_noise) * (radius + radius_noise)
+            y = self.center_y + math.sin(angle + angle_noise) * (radius + radius_noise)
             
             particle = QuantumMeshParticle(x, y, self.get_id())
+            particle.fluidity = self.gooiness
             self.mesh_particles.append(particle)
         
-        # Fewer trail particles
-        trail_length = max(2, int(self.size / 8))  # Reduced trail
-        for i in range(trail_length):
-            trail_y = self.center_y - (i + 1) * 2
-            trail_width = self.size * (1.0 - (i / trail_length)) * 0.3
-            
-            x = self.center_x + random.uniform(-trail_width/2, trail_width/2)
-            y = trail_y + random.uniform(-0.5, 0.5)
-            
-            particle = QuantumMeshParticle(x, y, self.get_id())
-            self.trail_particles.append(particle)
+        # Enhanced trail particles with density scaling
+        base_trail_length = max(3, int(self.size / 5))
+        trail_length = int(base_trail_length * self.particle_density)
+        trail_length = max(2, min(trail_length, 15))  # Clamp between 2 and 15
         
-        # Simplified connections
-        self._create_optimized_connections()
+        for i in range(trail_length):
+            trail_y = self.center_y - (i + 1) * random.uniform(1.5, 3.5)
+            trail_width = self.size * (1.0 - (i / trail_length)) * random.uniform(0.2, 0.5)
+            
+            # Scale particles per segment based on density
+            base_particles_per_segment = random.randint(1, 3)
+            particles_per_segment = max(1, int(base_particles_per_segment * self.particle_density))
+            
+            for j in range(particles_per_segment):
+                x = self.center_x + random.uniform(-trail_width, trail_width)
+                y = trail_y + random.uniform(-1, 1)
+                
+                particle = QuantumMeshParticle(x, y, self.get_id())
+                particle.fluidity = self.gooiness * random.uniform(0.8, 1.0)
+                self.trail_particles.append(particle)
+        
+        # Enhanced connections with better connectivity
+        self._create_enhanced_connections()
     
-    def _create_optimized_connections(self):
-        """Create optimized connections with fewer links."""
+    def _create_enhanced_connections(self):
+        """Create enhanced connections with better fluidity."""
         all_particles = self.mesh_particles + self.trail_particles
         
         for i, particle1 in enumerate(all_particles):
-            # Limit connections for performance
             connections_made = 0
-            max_connections = 3  # Limit connections per particle
+            # Scale max connections based on density
+            base_max_connections = random.randint(3, 6)
+            max_connections = int(base_max_connections * self.particle_density)
+            max_connections = max(2, min(max_connections, 10))  # Clamp between 2 and 10
             
-            for j, particle2 in enumerate(all_particles[i+1:], i+1):
+            # Sort particles by distance for better connectivity
+            distances = []
+            for j, particle2 in enumerate(all_particles):
+                if i != j:
+                    distance = math.sqrt(
+                        (particle2.x - particle1.x)**2 + 
+                        (particle2.y - particle1.y)**2
+                    )
+                    distances.append((j, distance))
+            
+            distances.sort(key=lambda x: x[1])
+            
+            for j, distance in distances:
                 if connections_made >= max_connections:
                     break
                     
-                distance = math.sqrt(
-                    (particle2.x - particle1.x)**2 + 
-                    (particle2.y - particle1.y)**2
-                )
-                
                 if distance < particle1.influence_radius:
                     particle1.connections.append(j)
-                    particle2.connections.append(i)
+                    all_particles[j].connections.append(i)
                     connections_made += 1
 
     def update_quantum_physics(self, time_step, gravity=0.1):
-        """Update quantum mesh physics."""
-        # Update deformation phase
+        """Update enhanced quantum mesh physics."""
+        # Update deformation phase with more variation
         self.deformation_phase += self.deformation_speed
         
+        # Handle formation timer for ceiling sticking
+        if self.formation_timer > 0:
+            self.formation_timer -= 1
+            gravity *= 0.1  # Reduced gravity during formation
+        
         # Apply gravity to drop center
-        self.acceleration_y += gravity
+        self.acceleration_y += gravity * random.uniform(0.8, 1.2)  # Gravity variation
         self.velocity_y += self.acceleration_y
         
-        # Apply drag
-        self.velocity_x *= (1.0 - self.drag_coefficient)
-        self.velocity_y *= (1.0 - self.drag_coefficient * 0.5)  # Less drag on Y
+        # Enhanced drag with more realistic behavior
+        drag_factor = 1.0 - (self.drag_coefficient * (1 + abs(self.velocity_y) * 0.5))
+        self.velocity_x *= drag_factor
+        self.velocity_y *= drag_factor
         
         # Update center position
         self.center_x += self.velocity_x
         self.center_y += self.velocity_y
         
-        # Update all mesh particles with quantum waves
-        self._update_mesh_particles(time_step)
+        # Update all mesh particles with enhanced quantum waves
+        self._update_enhanced_mesh_particles(time_step)
         
-        # Apply mesh connectivity forces
-        self._apply_mesh_forces()
+        # Apply enhanced mesh connectivity forces
+        self._apply_enhanced_mesh_forces()
         
-        # Cool down temperature
-        self.temperature = max(0.2, self.temperature - 0.002)
-    
-    def _update_mesh_particles(self, time_step):
-        """Update individual mesh particles with quantum wave behavior."""
+        # Handle particle detachment for more organic behavior
+        self._handle_particle_detachment()
+        
+        # Cool down temperature more gradually
+        self.temperature = max(0.3, self.temperature - 0.001)
+
+    def _update_enhanced_mesh_particles(self, time_step):
+        """Update mesh particles with enhanced quantum wave behavior."""
         all_particles = self.mesh_particles + self.trail_particles
         
         for i, particle in enumerate(all_particles):
-            # Quantum wave deformation
+            # Enhanced quantum wave deformation
             particle.wave_phase += particle.wave_speed
             
-            # Multi-layered wave interference
+            # Multi-layered wave interference with more complexity
             primary_wave = math.sin(particle.wave_phase) * particle.wave_amplitude
-            secondary_wave = math.cos(particle.wave_phase * 1.7) * (particle.wave_amplitude * 0.6)
-            tertiary_wave = math.sin(particle.wave_phase * 0.3 + self.deformation_phase) * (particle.wave_amplitude * 0.4)
+            secondary_wave = math.cos(particle.wave_phase * 1.7) * (particle.wave_amplitude * 0.8)
+            tertiary_wave = math.sin(particle.wave_phase * 0.3 + self.deformation_phase) * (particle.wave_amplitude * 0.6)
+            quaternary_wave = math.cos(particle.wave_phase * 2.3 + time_step * 0.02) * (particle.wave_amplitude * 0.4)
             
-            total_deformation = primary_wave + secondary_wave + tertiary_wave
+            total_deformation = (primary_wave + secondary_wave + tertiary_wave + quaternary_wave) * particle.fluidity
             
             # Apply wave deformation relative to drop center
             direction_x = particle.x - self.center_x
@@ -263,26 +316,27 @@ class FluidMeshDrop:
             norm_x = direction_x / distance
             norm_y = direction_y / distance
             
-            # Apply deformation
-            deform_strength = 0.1  # Control intensity
+            # Apply enhanced deformation
+            deform_strength = 0.15 * particle.fluidity  # More deformation
             particle.x += norm_x * total_deformation * deform_strength
             particle.y += norm_y * total_deformation * deform_strength
             
-            # Keep particles roughly connected to drop center
-            max_distance = self.size * 1.5
+            # Enhanced particle pulling with more organic behavior
+            max_distance = self.size * (1.8 + particle.fluidity * 0.5)
             if distance > max_distance:
-                # Pull back towards center
                 pull_strength = (distance - max_distance) / max_distance
-                particle.x -= norm_x * pull_strength * 2
-                particle.y -= norm_y * pull_strength * 2
-    
-    def _apply_mesh_forces(self):
-        """Apply connectivity forces between mesh particles."""
+                pull_strength *= (1.0 + particle.fluidity)
+                particle.x -= norm_x * pull_strength * 1.5
+                particle.y -= norm_y * pull_strength * 1.5
+
+    def _apply_enhanced_mesh_forces(self):
+        """Apply enhanced connectivity forces between mesh particles."""
         all_particles = self.mesh_particles + self.trail_particles
         
         for i, particle in enumerate(all_particles):
             force_x = 0
             force_y = 0
+            total_connections = len(particle.connections)
             
             # Apply forces from connected particles
             for j in particle.connections:
@@ -295,48 +349,66 @@ class FluidMeshDrop:
                     distance = math.sqrt(dx**2 + dy**2)
                     
                     if distance > 0:
-                        # Ideal connection distance
-                        ideal_distance = (particle.influence_radius + other.influence_radius) / 3
+                        # Enhanced ideal connection distance based on fluidity
+                        base_distance = (particle.influence_radius + other.influence_radius) / 4
+                        fluidity_factor = (particle.fluidity + other.fluidity) * 0.5
+                        ideal_distance = base_distance * (1.0 + fluidity_factor * 0.5)
                         
-                        # Spring force (attraction/repulsion)
-                        force_magnitude = (distance - ideal_distance) * 0.02
+                        # Enhanced spring force with non-linear behavior
+                        displacement = distance - ideal_distance
+                        force_magnitude = displacement * 0.025 * fluidity_factor
                         
-                        # Normalize direction
-                        force_x += (dx / distance) * force_magnitude
-                        force_y += (dy / distance) * force_magnitude
+                        # Add damping for stability
+                        relative_velocity_x = other.velocity_x - particle.velocity_x
+                        relative_velocity_y = other.velocity_y - particle.velocity_y
+                        damping_force_x = relative_velocity_x * 0.01
+                        damping_force_y = relative_velocity_y * 0.01
+                        
+                        # Normalize direction and apply forces
+                        force_x += (dx / distance) * force_magnitude + damping_force_x
+                        force_y += (dy / distance) * force_magnitude + damping_force_y
             
-            # Apply viscosity damping
-            particle.velocity_x = (particle.velocity_x + force_x) * particle.viscosity
-            particle.velocity_y = (particle.velocity_y + force_y) * particle.viscosity
+            # Apply enhanced viscosity with fluidity consideration
+            viscosity_factor = particle.viscosity * (1.0 - particle.fluidity * 0.2)
+            particle.velocity_x = (particle.velocity_x + force_x) * viscosity_factor
+            particle.velocity_y = (particle.velocity_y + force_y) * viscosity_factor
             
             # Update position
             particle.x += particle.velocity_x
             particle.y += particle.velocity_y
-    
-    def get_mesh_triangles(self):
-        """Get triangulation of mesh for rendering."""
+
+    def _handle_particle_detachment(self):
+        """Handle particle detachment for more organic behavior."""
         all_particles = self.mesh_particles + self.trail_particles
-        triangles = []
         
-        # Simple triangulation based on connections
         for i, particle in enumerate(all_particles):
-            for j in particle.connections:
-                if j > i and j < len(all_particles):
-                    # Find a third point to form triangle
-                    other = all_particles[j]
-                    
-                    for k in other.connections:
-                        if k > j and k < len(all_particles) and k in particle.connections:
-                            triangles.append((i, j, k))
-        
-        return triangles
-    
-    def get_id(self):
-        """Get unique ID for this drop."""
-        return hash((self.center_x, self.center_y, self.size)) % 10000
+            # Check if particle should detach
+            distance_from_center = math.sqrt(
+                (particle.x - self.center_x)**2 + 
+                (particle.y - self.center_y)**2
+            )
+            
+            # Detach if too far and low connectivity
+            max_detach_distance = self.size * 2.5
+            if (distance_from_center > max_detach_distance and 
+                len(particle.connections) <= 1 and 
+                random.random() < 0.02):  # Small chance of detachment
+                
+                # Create small detached droplet
+                if particle in self.mesh_particles:
+                    self.mesh_particles.remove(particle)
+                elif particle in self.trail_particles:
+                    self.trail_particles.remove(particle)
+                
+                # Remove connections
+                for other_particle in all_particles:
+                    if i in other_particle.connections:
+                        other_particle.connections.remove(i)
+                
+                self.detached_particles.append(particle)
 
 class QuantumFluidSystem(QWidget):
-    """Quantum fluid mesh system with jiggle physics."""
+    """Enhanced quantum fluid mesh system with improved gooey physics."""
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -345,26 +417,31 @@ class QuantumFluidSystem(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
         
-        # Quantum fluid system
+        # Enhanced quantum fluid system
         self.mesh_drops = []
+        self.small_droplets = []  # New: small detached droplets
         self.ceiling_sources = []
         self.lava_pool = None
         self.physics_timer = None
         self.is_enabled = True
         self.time_step = 0
         
-        # Performance optimizations
-        self.max_drops = 15  # Reduced for performance
-        self.update_frequency = 24  # Reduced from 60 FPS
+        # Particle density control (1.0 = default, 0.1 = minimal, 2.0 = maximum)
+        self.particle_density = 1.0
         
-        # Physics constants
-        self.gravity = 0.06  # Slightly reduced
-        self.max_gravity = 0.2
-        self.quantum_coherence = 0.9
-        self.mesh_fluidity = 0.9
+        # Enhanced performance optimizations
+        self.max_drops = 20  # Increased for more droplets
+        self.max_small_droplets = 30  # Limit small droplets
+        self.update_frequency = 30  # Slightly increased FPS
         
-        # Pool settings
-        self.pool_fill_rate = 1.0
+        # Enhanced physics constants
+        self.gravity = 0.04  # Reduced for slower formation
+        self.max_gravity = 0.15
+        self.quantum_coherence = 0.85
+        self.mesh_fluidity = 0.95
+        
+        # Enhanced pool settings
+        self.pool_fill_rate = 1.5  # Faster filling
         self.pool_drain_rate = 2.0
         self.is_draining = False
         
@@ -373,6 +450,19 @@ class QuantumFluidSystem(QWidget):
         
         QTimer.singleShot(100, self._delayed_init)
 
+    def set_particle_density(self, density):
+        """Set the particle density level."""
+        self.particle_density = max(0.1, min(2.0, density))  # Clamp between 0.1 and 2.0
+        
+        # Scale ceiling sources based on density
+        base_num_sources = 4
+        scaled_sources = int(base_num_sources * self.particle_density)
+        scaled_sources = max(2, min(scaled_sources, 10))  # Clamp between 2 and 10
+        
+        # If density changed significantly, recreate sources
+        if abs(len(self.ceiling_sources) - scaled_sources) > 1:
+            self._create_ceiling_sources()
+            
     def _delayed_init(self):
         """Initialize the quantum fluid system."""
         if self.width() <= 0 or self.height() <= 0:
@@ -388,60 +478,73 @@ class QuantumFluidSystem(QWidget):
         logger.info(f"Quantum fluid system initialized: {self.width()}x{self.height()}")
 
     def _create_ceiling_sources(self):
-        """Create more realistic quantum mesh sources."""
+        """Create enhanced quantum mesh sources with more variation."""
         width = max(self.width(), 800)
         self.ceiling_sources = []
         
-        num_sources = random.randint(3, 5)  # Fewer sources for performance
+        # Scale number of sources based on particle density
+        base_num_sources = random.randint(4, 7)
+        num_sources = int(base_num_sources * self.particle_density)
+        num_sources = max(2, min(num_sources, 12))  # Clamp between 2 and 12
+        
         for i in range(num_sources):
             x_base = (width / (num_sources + 1)) * (i + 1)
-            x = x_base + random.uniform(-60, 60)
-            x = max(40, min(width - 40, x))
+            x = x_base + random.uniform(-80, 80)  # More spread
+            x = max(60, min(width - 60, x))
+            
+            # Scale source size based on density
+            base_size = random.uniform(30, 60)
+            source_size = base_size * (0.7 + 0.3 * self.particle_density)  # Size scales with density
             
             source = {
                 'x': x,
-                'y': random.uniform(-5, 5),
-                'size': random.uniform(25, 45),
-                'quantum_energy': random.uniform(200, 400),
-                'emission_timer': random.uniform(0, 150),
-                'emission_interval': random.uniform(80, 250),
-                'coherence_level': random.uniform(0.85, 1.0),
-                'mesh_complexity': random.randint(6, 12),
-                'temperature': random.choice([0.9, 1.0, 0.85]),
-                # Visual enhancement properties
+                'y': random.uniform(-8, 8),
+                'size': source_size,
+                'quantum_energy': random.uniform(300, 500),  # More energy
+                'emission_timer': random.uniform(0, 200),
+                'emission_interval': random.uniform(120, 400),  # More random intervals
+                'coherence_level': random.uniform(0.7, 1.0),  # More variation
+                'mesh_complexity': random.randint(8, 16),  # More complex
+                'temperature': random.uniform(0.8, 1.0),  # More temperature variation
+                # Enhanced visual properties
                 'glow_phase': random.uniform(0, 2 * math.pi),
-                'glow_speed': random.uniform(0.02, 0.06),
-                'pulsation': random.uniform(0.8, 1.2),
-                'heat_distortion': random.uniform(0.5, 1.5)
+                'glow_speed': random.uniform(0.015, 0.08),  # More variation
+                'pulsation': random.uniform(0.7, 1.3),  # More pulsation
+                'heat_distortion': random.uniform(0.3, 2.0),  # More distortion
+                'formation_speed': random.uniform(0.5, 1.5)  # Speed of drop formation
             }
             self.ceiling_sources.append(source)
 
     def _create_quantum_mesh_drop(self, source):
-        """Create drops that stick to ceiling initially."""
-        drop_size = random.uniform(15, 25) * source['coherence_level']
+        """Create drops with enhanced sticking and formation behavior."""
+        # More size variation based on source properties
+        base_size = random.uniform(12, 30)
+        size_multiplier = source['coherence_level'] * source['formation_speed']
+        drop_size = base_size * size_multiplier
         
-        # Starting position - stick to ceiling first
-        start_x = source['x'] + random.uniform(-8, 8)
-        start_y = source['y'] + source['size'] * 0.7
+        # Starting position with more variation
+        start_x = source['x'] + random.uniform(-15, 15)
+        start_y = source['y'] + source['size'] * random.uniform(0.6, 0.9)
         
-        # Create mesh drop
-        drop = FluidMeshDrop(start_x, start_y, drop_size)
+        # Create enhanced mesh drop with particle density
+        drop = FluidMeshDrop(start_x, start_y, drop_size, self.particle_density)
         drop.temperature = source['temperature']
         
-        # Enhanced sticking behavior
+        # Enhanced sticking behavior with longer formation time
         drop.is_stuck_to_ceiling = True
-        drop.stick_timer = drop.ceiling_stick_time
-        drop.velocity_y = 0  # No initial downward velocity
+        drop.stick_timer = drop.ceiling_stick_time * random.uniform(1.2, 2.0)  # Longer sticking
+        drop.formation_timer = random.uniform(80, 250)  # Formation time
+        drop.velocity_y = 0
         
-        # Add quantum properties
-        drop.jiggle_amplitude *= source['coherence_level']
+        # Enhanced quantum properties
+        drop.jiggle_amplitude *= source['coherence_level'] * 1.2
         drop.surface_tension *= source['coherence_level']
-        drop.gooiness = source['coherence_level']
+        drop.gooiness = source['coherence_level'] * random.uniform(0.9, 1.0)
         
         self.mesh_drops.append(drop)
 
     def update_quantum_physics(self):
-        """Optimized physics update."""
+        """Enhanced physics update with improved fluid behavior."""
         if not self.is_enabled:
             return
             
@@ -449,27 +552,31 @@ class QuantumFluidSystem(QWidget):
         width = max(self.width(), 800)
         height = max(self.height(), 600)
         
-        # Update ceiling sources less frequently
-        if self.time_step % 2 == 0:  # Every other frame
+        # Update ceiling sources with more variation
+        if self.time_step % random.randint(1, 3) == 0:
             for source in self.ceiling_sources:
-                self._update_ceiling_source(source, width)
+                self._update_enhanced_ceiling_source(source, width)
         
-        # Update existing mesh drops
+        # Update existing mesh drops with enhanced physics
         for drop in self.mesh_drops[:]:
-            self._update_drop_physics(drop, height)
+            self._update_enhanced_drop_physics(drop, height)
             
-            # Remove drops that hit the pool or left screen
-            if drop.center_y > height - self.lava_pool.level:
-                self.lava_pool.add_lava(self.pool_fill_rate * drop.size * 0.1)
+            # Handle drop reaching pool with splash effects
+            if drop.center_y > height - self.lava_pool.level - 20:
+                self._create_splash_effect(drop)
+                self.lava_pool.add_lava(self.pool_fill_rate * drop.size * 0.15)
                 self.mesh_drops.remove(drop)
-            elif drop.center_x < -50 or drop.center_x > width + 50:
+            elif drop.center_x < -80 or drop.center_x > width + 80:
                 self.mesh_drops.remove(drop)
         
-        # Apply quantum coherence less frequently
-        if self.time_step % 3 == 0:  # Every third frame
-            self._apply_gooey_coherence()
+        # Update small droplets
+        self._update_small_droplets(height)
         
-        # Update lava pool
+        # Apply enhanced quantum coherence
+        if self.time_step % 2 == 0:  # More frequent updates
+            self._apply_enhanced_gooey_coherence()
+        
+        # Update lava pool with enhanced behavior
         self.lava_pool.update()
         
         # Handle draining
@@ -479,6 +586,9 @@ class QuantumFluidSystem(QWidget):
         # Limit drops for performance
         if len(self.mesh_drops) > self.max_drops:
             self.mesh_drops = self.mesh_drops[-self.max_drops:]
+        
+        if len(self.small_droplets) > self.max_small_droplets:
+            self.small_droplets = self.small_droplets[-self.max_small_droplets:]
         
         self.update()
 
@@ -577,34 +687,12 @@ class QuantumFluidSystem(QWidget):
             source['quantum_energy'] += random.uniform(3, 8)
             source['quantum_energy'] = min(source['quantum_energy'], 300)
 
-    def paintEvent(self, event):
-        """Paint the quantum fluid mesh system."""
-        painter = QPainter(self)
-        
-        if not painter.isActive():
-            return
-        
-        try:
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            painter.fillRect(self.rect(), QColor(0, 0, 0, 0))
-            
-            # Draw lava pool first
-            if self.lava_pool and self.lava_pool.level > 0:
-                self._draw_lava_pool(painter)
-            
-            # Draw ceiling sources
-            for source in self.ceiling_sources:
-                self._draw_quantum_source(painter, source)
-            
-            # Draw quantum mesh drops
-            for drop in self.mesh_drops:
-                self._draw_quantum_mesh_drop(painter, drop)
-                
-        except Exception as e:
-            logger.error(f"Error in quantum fluid painting: {e}")
-
     def _draw_quantum_source(self, painter, source):
         """Draw enhanced realistic quantum source."""
+        # Check if painter is still active
+        if not painter.isActive():
+            return
+            
         # Update visual properties
         source['glow_phase'] += source['glow_speed']
         
@@ -612,137 +700,242 @@ class QuantumFluidSystem(QWidget):
         energy_ratio = source['quantum_energy'] / 400.0
         heat_intensity = 0.5 + 0.5 * math.sin(source['glow_phase'])
         
-        # Multiple layered effects
-        # Heat distortion background
-        distortion_size = source['size'] * (1.5 + source['heat_distortion'] * heat_intensity)
-        distortion_color = QColor(255, 100, 0, int(40 * energy_ratio))
-        painter.setBrush(QBrush(distortion_color))
-        painter.setPen(QPen(Qt.PenStyle.NoPen))
-        painter.drawEllipse(
-            int(source['x'] - distortion_size/2),
-            int(source['y'] - distortion_size/4),
-            int(distortion_size),
-            int(distortion_size * 0.3)
-        )
-        
-        # Main molten core with pulsation
-        core_size = source['size'] * source['pulsation'] * (0.9 + 0.1 * heat_intensity)
-        core_gradient_color1 = QColor(255, 60, 0, int(220 * energy_ratio))
-        core_gradient_color2 = QColor(255, 150, 0, int(180 * energy_ratio))
-        
-        # Create gradient effect manually by drawing multiple ellipses
-        for layer in range(3):
-            layer_size = core_size * (1.0 - layer * 0.2)
-            layer_alpha = int((220 - layer * 40) * energy_ratio)
-            layer_color = QColor(255, 60 + layer * 30, layer * 20, layer_alpha)
-            
-            painter.setBrush(QBrush(layer_color))
+        try:
+            # Multiple layered effects
+            # Heat distortion background
+            distortion_size = source['size'] * (1.5 + source['heat_distortion'] * heat_intensity)
+            distortion_color = QColor(255, 100, 0, int(40 * energy_ratio))
+            painter.setBrush(QBrush(distortion_color))
             painter.setPen(QPen(Qt.PenStyle.NoPen))
             painter.drawEllipse(
-                int(source['x'] - layer_size/2),
-                int(source['y'] - layer_size/4),
-                int(layer_size),
-                int(layer_size * 0.5)
+                int(source['x'] - distortion_size/2),
+                int(source['y'] - distortion_size/4),
+                int(distortion_size),
+                int(distortion_size * 0.3)
             )
-        
-        # Bright center core
-        center_size = core_size * 0.3
-        center_color = QColor(255, 255, 200, int(255 * energy_ratio))
-        painter.setBrush(QBrush(center_color))
-        painter.setPen(QPen(Qt.PenStyle.NoPen))
-        painter.drawEllipse(
-            int(source['x'] - center_size/2),
-            int(source['y'] - center_size/6),
-            int(center_size),
-            int(center_size * 0.3)
-        )
+            
+            # Main molten core with pulsation
+            core_size = source['size'] * source['pulsation'] * (0.9 + 0.1 * heat_intensity)
+            
+            # Create gradient effect manually by drawing multiple ellipses
+            for layer in range(3):
+                if not painter.isActive():
+                    break
+                    
+                layer_size = core_size * (1.0 - layer * 0.2)
+                layer_alpha = int((220 - layer * 40) * energy_ratio)
+                layer_color = QColor(255, 60 + layer * 30, layer * 20, layer_alpha)
+                
+                painter.setBrush(QBrush(layer_color))
+                painter.setPen(QPen(Qt.PenStyle.NoPen))
+                painter.drawEllipse(
+                    int(source['x'] - layer_size/2),
+                    int(source['y'] - layer_size/4),
+                    int(layer_size),
+                    int(layer_size * 0.5)
+                )
+            
+            # Bright center core
+            if painter.isActive():
+                center_size = core_size * 0.3
+                center_color = QColor(255, 255, 200, int(255 * energy_ratio))
+                painter.setBrush(QBrush(center_color))
+                painter.setPen(QPen(Qt.PenStyle.NoPen))
+                painter.drawEllipse(
+                    int(source['x'] - center_size/2),
+                    int(source['y'] - center_size/6),
+                    int(center_size),
+                    int(center_size * 0.3)
+                )
+        except Exception as e:
+            logger.error(f"Error drawing quantum source: {e}")
 
     def _draw_quantum_mesh_drop(self, painter, drop):
         """Draw gooey quantum mesh drop with metaball effect."""
+        if not painter.isActive():
+            return
+            
         if not drop.mesh_particles and not drop.trail_particles:
             return
         
-        # Temperature-based color with gooey enhancement
-        temp_color = self._get_gooey_temperature_color(drop.temperature, drop.opacity, drop.gooiness)
-        
-        # Draw main gooey blob using metaball technique
-        self._draw_gooey_metaball(painter, drop, temp_color)
-        
-        # Draw stretching effects if applicable
-        if drop.is_stretching and drop.stretch_factor > 1.2:
-            self._draw_stretch_effects(painter, drop, temp_color)
+        try:
+            # Temperature-based color with gooey enhancement
+            temp_color = self._get_gooey_temperature_color(drop.temperature, drop.opacity, drop.gooiness)
+            
+            # Draw main gooey blob using metaball technique
+            self._draw_gooey_metaball(painter, drop, temp_color)
+            
+            # Draw stretching effects if applicable
+            if drop.is_stretching and drop.stretch_factor > 1.2:
+                self._draw_stretch_effects(painter, drop, temp_color)
+        except Exception as e:
+            logger.error(f"Error drawing quantum mesh drop: {e}")
 
+    def _ensure_initialized(self):
+        """Ensure the system is properly initialized."""
+        if not self.ceiling_sources and self.width() > 0 and self.height() > 0:
+            self._create_ceiling_sources()
+            
+    def paintEvent(self, event):
+        """Paint the quantum fluid mesh system."""
+        painter = QPainter()
+        
+        # Check if painter can begin painting
+        if not painter.begin(self):
+            return
+        
+        # Verify widget is ready for painting
+        if self.width() <= 0 or self.height() <= 0 or not self.isVisible():
+            painter.end()
+            return
+        
+        try:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.fillRect(self.rect(), QColor(0, 0, 0, 0))
+            
+            # Check if we have valid data to paint
+            if not hasattr(self, 'lava_pool') or not hasattr(self, 'ceiling_sources'):
+                return
+            
+            # Draw lava pool first
+            if self.lava_pool and self.lava_pool.level > 0:
+                self._draw_lava_pool(painter)
+            
+            # Draw ceiling sources
+            for source in self.ceiling_sources:
+                if painter.isActive():
+                    self._draw_quantum_source(painter, source)
+            
+            # Draw quantum mesh drops
+            for drop in self.mesh_drops:
+                if painter.isActive():
+                    self._draw_quantum_mesh_drop(painter, drop)
+            
+            # Draw small droplets
+            for droplet in self.small_droplets:
+                if painter.isActive():
+                    self._draw_small_droplet(painter, droplet)
+                    
+        except Exception as e:
+            logger.error(f"Error in quantum fluid painting: {e}")
+        finally:
+            # Always end the painter
+            if painter.isActive():
+                painter.end()
+            
+    def _draw_small_droplet(self, painter, droplet):
+        """Draw small detached droplets."""
+        if not painter.isActive():
+            return
+        
+        try:
+            # Get droplet color based on temperature
+            temp_color = self._get_gooey_temperature_color(
+                droplet.temperature, 
+                droplet.opacity, 
+                0.5  # Lower gooiness for small droplets
+            )
+            
+            painter.setBrush(QBrush(temp_color))
+            painter.setPen(QPen(temp_color, 1))
+            
+            # Draw simple circle
+            radius = droplet.size / 2
+            painter.drawEllipse(
+                int(droplet.center_x - radius),
+                int(droplet.center_y - radius),
+                int(droplet.size),
+                int(droplet.size)
+            )
+            
+        except Exception as e:
+            logger.error(f"Error drawing small droplet: {e}")
+        
     def _draw_gooey_metaball(self, painter, drop, temp_color):
         """Draw smooth gooey metaball shape."""
-        painter.setBrush(QBrush(temp_color))
-        painter.setPen(QPen(temp_color, 1))
-        
-        # Main body - more organic shape
-        main_radius = drop.size * 0.8
-        deform = math.sin(drop.deformation_phase) * drop.jiggle_amplitude * 0.5
-        
-        # Create organic blob points
-        blob_points = []
-        num_points = 12  # Smooth curve
-        
-        for i in range(num_points):
-            angle = (2 * math.pi * i) / num_points
+        if not painter.isActive():
+            return
             
-            # Organic radius variation
-            radius_var = 0.8 + 0.2 * math.sin(angle * 3 + drop.deformation_phase)
-            radius_var += 0.1 * math.sin(angle * 5 + drop.deformation_phase * 1.5)
-            radius = main_radius * radius_var
+        try:
+            painter.setBrush(QBrush(temp_color))
+            painter.setPen(QPen(temp_color, 1))
             
-            # Add gooey deformation
-            radius += deform * 0.2 * math.sin(angle * 2)
+            # Main body - more organic shape
+            main_radius = drop.size * 0.8
+            deform = math.sin(drop.deformation_phase) * drop.jiggle_amplitude * 0.5
             
-            # Flatten if stuck to ceiling
-            y_scale = 0.7 if drop.is_stuck_to_ceiling else 1.0
+            # Create organic blob points
+            blob_points = []
+            num_points = 12  # Smooth curve
             
-            x = drop.center_x + math.cos(angle) * radius
-            y = drop.center_y + math.sin(angle) * radius * y_scale
+            for i in range(num_points):
+                angle = (2 * math.pi * i) / num_points
+                
+                # Organic radius variation
+                radius_var = 0.8 + 0.2 * math.sin(angle * 3 + drop.deformation_phase)
+                radius_var += 0.1 * math.sin(angle * 5 + drop.deformation_phase * 1.5)
+                radius = main_radius * radius_var
+                
+                # Add gooey deformation
+                radius += deform * 0.2 * math.sin(angle * 2)
+                
+                # Flatten if stuck to ceiling
+                y_scale = 0.7 if drop.is_stuck_to_ceiling else 1.0
+                
+                x = drop.center_x + math.cos(angle) * radius
+                y = drop.center_y + math.sin(angle) * radius * y_scale
+                
+                blob_points.append(QPointF(x, y))
             
-            blob_points.append(QPointF(x, y))
-        
-        # Draw smooth blob
-        painter.drawPolygon(blob_points)
-        
-        # Add tail if not stuck to ceiling
-        if not drop.is_stuck_to_ceiling:
-            self._draw_gooey_tail(painter, drop, temp_color, main_radius)
+            # Draw smooth blob
+            if painter.isActive() and len(blob_points) >= 3:
+                painter.drawPolygon(blob_points)
+            
+            # Add tail if not stuck to ceiling
+            if not drop.is_stuck_to_ceiling and painter.isActive():
+                self._draw_gooey_tail(painter, drop, temp_color, main_radius)
+        except Exception as e:
+            logger.error(f"Error drawing gooey metaball: {e}")
 
     def _draw_gooey_tail(self, painter, drop, temp_color, main_radius):
         """Draw gooey dripping tail."""
-        tail_length = drop.size * 1.2
-        tail_segments = 8
-        
-        tail_points = []
-        
-        for i in range(tail_segments):
-            progress = i / (tail_segments - 1)
-            y_offset = -tail_length * progress
+        if not painter.isActive():
+            return
             
-            # Tail width tapering
-            width = main_radius * 0.4 * (1.0 - progress * 0.8)
+        try:
+            tail_length = drop.size * 1.2
+            tail_segments = 8
             
-            # Add gooey wiggle
-            wiggle = math.sin(drop.deformation_phase + progress * 3) * drop.jiggle_amplitude * 0.2
+            tail_points = []
             
-            # Create tail points
-            left_x = drop.center_x - width + wiggle
-            right_x = drop.center_x + width + wiggle
-            y = drop.center_y + y_offset
+            for i in range(tail_segments):
+                progress = i / (tail_segments - 1)
+                y_offset = -tail_length * progress
+                
+                # Tail width tapering
+                width = main_radius * 0.4 * (1.0 - progress * 0.8)
+                
+                # Add gooey wiggle
+                wiggle = math.sin(drop.deformation_phase + progress * 3) * drop.jiggle_amplitude * 0.2
+                
+                # Create tail points
+                left_x = drop.center_x - width + wiggle
+                right_x = drop.center_x + width + wiggle
+                y = drop.center_y + y_offset
+                
+                tail_points.append(QPointF(left_x, y))
+                tail_points.insert(0, QPointF(right_x, y))  # Mirror for smooth shape
             
-            tail_points.append(QPointF(left_x, y))
-            tail_points.insert(0, QPointF(right_x, y))  # Mirror for smooth shape
-        
-        # Draw tail with slightly transparent color
-        tail_color = QColor(temp_color.red(), temp_color.green(), temp_color.blue(), int(temp_color.alpha() * 0.8))
-        painter.setBrush(QBrush(tail_color))
-        painter.setPen(QPen(tail_color, 1))
-        
-        if len(tail_points) >= 3:
-            painter.drawPolygon(tail_points)
+            # Draw tail with slightly transparent color
+            if painter.isActive():
+                tail_color = QColor(temp_color.red(), temp_color.green(), temp_color.blue(), int(temp_color.alpha() * 0.8))
+                painter.setBrush(QBrush(tail_color))
+                painter.setPen(QPen(tail_color, 1))
+                
+                if len(tail_points) >= 3:
+                    painter.drawPolygon(tail_points)
+        except Exception as e:
+            logger.error(f"Error drawing gooey tail: {e}")
 
     def _draw_stretch_effects(self, painter, drop, temp_color):
         """Draw stretching gooey effects between connected drops."""
@@ -799,65 +992,88 @@ class QuantumFluidSystem(QWidget):
 
     def _draw_lava_pool(self, painter):
         """Draw lava pool with quantum surface effects."""
+        if not painter.isActive():
+            return
+            
         pool = self.lava_pool
         
-        if pool.level <= 0:
+        if not pool or pool.level <= 0:
             return
         
-        # Pool body
-        pool_color = QColor(255, 23, 68, 200)
-        painter.setBrush(QBrush(pool_color))
-        painter.setPen(QPen(pool_color, 0))
-        
-        # Draw pool rectangle
-        painter.drawRect(
-            0, 
-            int(self.height() - pool.level), 
-            int(self.width()), 
-            int(pool.level)
-        )
-        
-        # Quantum surface waves
-        wave_points = []
-        for x in range(0, int(self.width()), 3):
-            # Multi-frequency quantum waves
-            primary = math.sin(x * 0.02 + self.time_step * 0.08) * 4
-            secondary = math.cos(x * 0.05 + self.time_step * 0.12) * 2
-            tertiary = math.sin(x * 0.01 + self.time_step * 0.05) * 6
+        try:
+            # Pool body
+            pool_color = QColor(255, 23, 68, 200)
+            painter.setBrush(QBrush(pool_color))
+            painter.setPen(QPen(pool_color, 0))
             
-            wave_height = primary + secondary + tertiary
-            y = self.height() - pool.level + wave_height
-            wave_points.append(QPointF(x, y))
-        
-        # Draw quantum surface
-        if wave_points:
-            surface_color = QColor(255, 100, 100, 180)
-            painter.setPen(QPen(surface_color, 3))
+            # Draw pool rectangle
+            if painter.isActive():
+                painter.drawRect(
+                    0, 
+                    int(self.height() - pool.level), 
+                    int(self.width()), 
+                    int(pool.level)
+                )
             
-            for i in range(len(wave_points) - 1):
-                painter.drawLine(wave_points[i], wave_points[i + 1])
+            # Quantum surface waves
+            if painter.isActive():
+                wave_points = []
+                for x in range(0, int(self.width()), 3):
+                    # Multi-frequency quantum waves
+                    primary = math.sin(x * 0.02 + self.time_step * 0.08) * 4
+                    secondary = math.cos(x * 0.05 + self.time_step * 0.12) * 2
+                    tertiary = math.sin(x * 0.01 + self.time_step * 0.05) * 6
+                    
+                    wave_height = primary + secondary + tertiary
+                    y = self.height() - pool.level + wave_height
+                    wave_points.append(QPointF(x, y))
+                
+                # Draw quantum surface
+                if wave_points and painter.isActive():
+                    surface_color = QColor(255, 100, 100, 180)
+                    painter.setPen(QPen(surface_color, 3))
+                    
+                    for i in range(len(wave_points) - 1):
+                        if not painter.isActive():
+                            break
+                        painter.drawLine(wave_points[i], wave_points[i + 1])
+        except Exception as e:
+            logger.error(f"Error drawing lava pool: {e}")
 
     def toggle_particles(self):
         """Toggle the quantum fluid system."""
         self.is_enabled = not self.is_enabled
         if not self.is_enabled:
+            # Clear all particle systems
             self.mesh_drops.clear()
+            self.small_droplets.clear()  # Add this line
             self.ceiling_sources.clear()
-            if self.lava_pool:
+            
+            # Reset lava pool
+            if hasattr(self, 'lava_pool') and self.lava_pool:
                 self.lava_pool.level = 0
                 self.lava_pool.surface_particles.clear()
                 self.lava_pool.bubbles.clear()
-            if self.physics_timer:
+            
+            # Stop physics timer
+            if hasattr(self, 'physics_timer') and self.physics_timer:
                 self.physics_timer.stop()
+            
             self.update()
         else:
+            # Re-enable the system
             self._create_ceiling_sources()
-            if self.lava_pool:
+            
+            # Recreate lava pool
+            if hasattr(self, 'lava_pool'):
                 self.lava_pool = LavaPool(self.width(), self.height())
-            if not self.physics_timer:
+            
+            # Restart physics timer
+            if not hasattr(self, 'physics_timer') or not self.physics_timer:
                 self.physics_timer = QTimer()
                 self.physics_timer.timeout.connect(self.update_quantum_physics)
-            self.physics_timer.start(16)
+            
+            self.physics_timer.start(int(1000 / self.update_frequency))
 
     def toggle_drain(self):
         """Toggle pool draining."""
@@ -883,9 +1099,142 @@ class QuantumFluidSystem(QWidget):
     def showEvent(self, event):
         """Handle show event."""
         super().showEvent(event)
-        if not self.ceiling_sources:
-            self._create_ceiling_sources()
+        # Small delay before creating sources to ensure widget is ready
+        QTimer.singleShot(50, self._ensure_initialized)
 
+    def _update_small_droplets(self, height):
+        """Update small detached droplets."""
+        for droplet in self.small_droplets[:]:
+            # Update droplet physics
+            droplet.velocity_y += 0.02  # Light gravity
+            droplet.center_x += droplet.velocity_x
+            droplet.center_y += droplet.velocity_y
+            
+            # Add some drift
+            droplet.velocity_x += random.uniform(-0.005, 0.005)
+            droplet.velocity_y += random.uniform(-0.002, 0.002)
+            
+            # Apply drag
+            droplet.velocity_x *= 0.98
+            droplet.velocity_y *= 0.98
+            
+            # Remove if out of bounds or reached pool
+            if (droplet.center_y > height - (self.lava_pool.level if self.lava_pool else 0) - 10 or
+                droplet.center_x < -50 or droplet.center_x > self.width() + 50):
+                
+                if droplet in self.small_droplets:
+                    self.small_droplets.remove(droplet)
+                    
+                    # Add to pool if it reached the bottom
+                    if droplet.center_y > height - (self.lava_pool.level if self.lava_pool else 0) - 10:
+                        if self.lava_pool:
+                            self.lava_pool.add_lava(0.5)  # Small amount
+
+    def _create_splash_effect(self, drop):
+        """Create splash effect when drop hits pool."""
+        # Create small droplets from the splash
+        num_splash_droplets = random.randint(2, 5)
+        
+        for _ in range(num_splash_droplets):
+            # Create small droplet with splash physics
+            splash_droplet = type('SmallDroplet', (), {
+                'center_x': drop.center_x + random.uniform(-15, 15),
+                'center_y': drop.center_y - random.uniform(5, 15),
+                'size': random.uniform(3, 8),
+                'velocity_x': random.uniform(-0.2, 0.2),
+                'velocity_y': random.uniform(-0.1, -0.05),  # Upward splash
+                'temperature': drop.temperature * 0.8,
+                'opacity': 0.7
+            })()
+            
+            self.small_droplets.append(splash_droplet)
+            
+        # Limit number of small droplets
+        if len(self.small_droplets) > self.max_small_droplets:
+            self.small_droplets = self.small_droplets[-self.max_small_droplets:]
+
+    def _update_enhanced_ceiling_source(self, source, width):
+        """Update enhanced ceiling quantum source."""
+        source['emission_timer'] += 1
+        
+        # Update visual properties
+        source['glow_phase'] += source['glow_speed']
+        source['pulsation'] = 0.9 + 0.1 * math.sin(source['glow_phase'])
+        
+        # Create new mesh drop
+        if (source['emission_timer'] >= source['emission_interval'] and 
+            source['quantum_energy'] > 30):
+            
+            self._create_quantum_mesh_drop(source)
+            source['emission_timer'] = 0
+            source['emission_interval'] = random.uniform(120, 400)
+            source['quantum_energy'] -= random.uniform(15, 25)
+        
+        # Recharge quantum energy
+        if random.random() < 0.02:
+            source['quantum_energy'] += random.uniform(3, 8)
+            source['quantum_energy'] = min(source['quantum_energy'], 500)
+
+    def _update_enhanced_drop_physics(self, drop, height):
+        """Update individual drop with enhanced sticking and gooey physics."""
+        # Handle ceiling sticking
+        if drop.is_stuck_to_ceiling:
+            drop.stick_timer -= 1
+            
+            # Add slight jiggle while stuck
+            drop.center_x += math.sin(self.time_step * 0.05 + drop.center_x * 0.01) * 0.2
+            
+            # Release when timer expires or if too stretched
+            if drop.stick_timer <= 0 or drop.stretch_factor > 1.5:
+                drop.is_stuck_to_ceiling = False
+                drop.velocity_y = random.uniform(0.02, 0.08)  # Gentle release
+        else:
+            # Normal physics when not stuck
+            drop.update_quantum_physics(self.time_step, self.gravity)
+            
+            # Check for nearby ceiling particles to re-stick
+            self._check_ceiling_sticking(drop)
+
+    def _apply_enhanced_gooey_coherence(self):
+        """Apply enhanced gooey coherence between drops."""
+        for i, drop1 in enumerate(self.mesh_drops):
+            for j, drop2 in enumerate(self.mesh_drops[i+1:], i+1):
+                distance = math.sqrt(
+                    (drop2.center_x - drop1.center_x)**2 + 
+                    (drop2.center_y - drop1.center_y)**2
+                )
+                
+                # Enhanced gooey connection range
+                base_range = 45
+                gooey_bonus = (drop1.gooiness + drop2.gooiness) * 15
+                connection_range = base_range + gooey_bonus
+                
+                if distance < connection_range and distance > 0:
+                    # Stronger gooey force with non-linear behavior
+                    gooey_strength = (connection_range - distance) / connection_range
+                    gooey_strength = gooey_strength ** 1.5  # Non-linear for more dramatic effect
+                    gooey_strength *= (drop1.gooiness + drop2.gooiness) * 0.6
+                    
+                    # Apply stretchy attractive force
+                    force_multiplier = 0.03 * gooey_strength
+                    force_x = ((drop2.center_x - drop1.center_x) / distance) * force_multiplier
+                    force_y = ((drop2.center_y - drop1.center_y) / distance) * force_multiplier
+                    
+                    # Only apply if not stuck to ceiling
+                    if not drop1.is_stuck_to_ceiling:
+                        drop1.velocity_x += force_x
+                        drop1.velocity_y += force_y * 0.8  # Slightly less vertical force
+                    if not drop2.is_stuck_to_ceiling:
+                        drop2.velocity_x -= force_x
+                        drop2.velocity_y -= force_y * 0.8
+                    
+                    # Mark as stretching for visual effects
+                    if distance < connection_range * 0.7:
+                        drop1.is_stretching = True
+                        drop2.is_stretching = True
+                        drop1.stretch_factor = max(1.0, distance / 25)
+                        drop2.stretch_factor = max(1.0, distance / 25)
+                    
 class LavaPool:
     """Pool of lava at the bottom with bubbling physics."""
     
@@ -1039,9 +1388,71 @@ class RagchefUI(QMainWindow):
         self.particles.raise_()
         self.particles.show()
         
-        # Create control buttons
+        # Create control buttons and slider
         button_y = 10
         button_spacing = 50
+        
+        # Particle density slider
+        self.density_slider = QSlider(Qt.Orientation.Vertical, self)
+        self.density_slider.setRange(10, 200)  # 0.1 to 2.0 (multiplied by 100)
+        self.density_slider.setValue(100)  # Default 1.0
+        self.density_slider.setFixedSize(30, 150)
+        self.density_slider.setToolTip("Particle Density\n(Low ← → High)")
+        self.density_slider.setStyleSheet("""
+            QSlider::groove:vertical {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(31, 41, 55, 230),
+                    stop:1 rgba(55, 65, 81, 230));
+                width: 8px;
+                border-radius: 4px;
+                border: 1px solid rgba(255, 23, 68, 102);
+            }
+            QSlider::handle:vertical {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 23, 68, 204),
+                    stop:1 rgba(255, 69, 0, 204));
+                border: 2px solid rgba(255, 23, 68, 153);
+                width: 20px;
+                height: 15px;
+                border-radius: 8px;
+                margin: -6px;
+            }
+            QSlider::handle:vertical:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 69, 0, 255),
+                    stop:1 rgba(255, 23, 68, 255));
+                border: 2px solid rgba(255, 69, 0, 255);
+            }
+            QSlider::sub-page:vertical {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 rgba(255, 23, 68, 153),
+                    stop:1 rgba(255, 69, 0, 153));
+                border-radius: 4px;
+            }
+            QSlider::add-page:vertical {
+                background: rgba(31, 41, 55, 128);
+                border-radius: 4px;
+            }
+        """)
+        self.density_slider.valueChanged.connect(self._on_density_changed)
+        self.density_slider.move(self.width() - (button_spacing * 3) - 40, button_y + 50)
+        self.density_slider.raise_()
+        
+        # Density label
+        self.density_label = QLabel("Density", self)
+        self.density_label.setStyleSheet("""
+            QLabel {
+                color: #FF1744;
+                font-family: 'Arial Black', Arial, sans-serif;
+                font-size: 10px;
+                font-weight: bold;
+                background: transparent;
+            }
+        """)
+        self.density_label.setFixedSize(50, 20)
+        self.density_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.density_label.move(self.width() - (button_spacing * 3) - 50, button_y + 210)
+        self.density_label.raise_()
         
         # Lava toggle button
         self.particle_toggle = QPushButton("🌋", self)
@@ -1108,6 +1519,16 @@ class RagchefUI(QMainWindow):
         
         logger.info("RagchefUI initialization complete")
 
+
+    def _on_density_changed(self, value):
+        """Handle particle density slider change."""
+        density = value / 100.0  # Convert from 0-200 to 0.0-2.0
+        if hasattr(self, 'particles') and self.particles:
+            self.particles.set_particle_density(density)
+            
+        # Update tooltip with current value
+        self.density_slider.setToolTip(f"Particle Density: {density:.1f}\n(Low ← → High)")
+
     def _toggle_particles(self):
         """Toggle lava drip effects."""
         if hasattr(self, 'particles') and self.particles:
@@ -1141,9 +1562,17 @@ class RagchefUI(QMainWindow):
             self.particles.setGeometry(0, 0, self.width(), self.height())
             self.particles.raise_()
         
-        # Update button positions
+        # Update control positions
         button_y = 10
         button_spacing = 50
+        
+        if hasattr(self, 'density_slider') and self.density_slider:
+            self.density_slider.move(self.width() - (button_spacing * 3) - 40, button_y + 50)
+            self.density_slider.raise_()
+        
+        if hasattr(self, 'density_label') and self.density_label:
+            self.density_label.move(self.width() - (button_spacing * 3) - 50, button_y + 210)
+            self.density_label.raise_()
         
         if hasattr(self, 'particle_toggle') and self.particle_toggle:
             self.particle_toggle.move(self.width() - button_spacing, button_y)
@@ -2113,9 +2542,70 @@ class RagchefUI(QMainWindow):
         self.analyze_button.setEnabled(False)
         self.analysis_results.clear()
         
+        # Create a wrapper function that uses the dataset expander's analyze method
+        async def analyze_datasets_wrapper(orig_path, exp_path, analysis_options, callback=None):
+            """Wrapper function to analyze datasets using the dataset expander."""
+            try:
+                import json
+                from pathlib import Path
+                
+                if callback:
+                    callback("Loading datasets...")
+                
+                # Load datasets based on file format
+                def load_dataset(file_path):
+                    path = Path(file_path)
+                    if path.suffix == '.jsonl':
+                        conversations = []
+                        with open(path, 'r', encoding='utf-8') as f:
+                            for line in f:
+                                line = line.strip()
+                                if line:
+                                    conversations.append(json.loads(line))
+                        return conversations
+                    elif path.suffix == '.json':
+                        with open(path, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                            # Handle different JSON formats
+                            if isinstance(data, list):
+                                return data
+                            elif isinstance(data, dict) and 'conversations' in data:
+                                return data['conversations']
+                            else:
+                                return [data]  # Assume single conversation
+                    else:
+                        raise ValueError(f"Unsupported file format: {path.suffix}")
+                
+                if callback:
+                    callback("Loading original dataset...")
+                orig_conversations = load_dataset(orig_path)
+                
+                if callback:
+                    callback("Loading expanded dataset...")
+                exp_conversations = load_dataset(exp_path)
+                
+                if callback:
+                    callback("Analyzing datasets...")
+                
+                # Use the dataset expander's analyze_expanded_dataset method
+                analysis_results = self.research_manager.dataset_expander.analyze_expanded_dataset(
+                    orig_conversations, 
+                    exp_conversations
+                )
+                
+                if callback:
+                    callback("Analysis complete!")
+                
+                return analysis_results
+                
+            except Exception as e:
+                if callback:
+                    callback(f"Error during analysis: {str(e)}")
+                raise
+        
         # Start analysis in worker thread
         self.worker_thread = WorkerThread(
-            self.research_manager.analyze_expanded_dataset,
+            analyze_datasets_wrapper,
             orig_path=orig_path,
             exp_path=exp_path,
             analysis_options={
@@ -2167,6 +2657,7 @@ class RagchefUI(QMainWindow):
                 QMessageBox.critical(self, "Save Error", f"Error saving file: {str(e)}")
 
     def paintEvent(self, event):
-        """Override paint event to ensure proper styling."""
-        # No need for custom painting, let Qt handle it
+        """Paint the quantum fluid mesh system."""
+        # This is correct - the main window doesn't need custom painting
+        # The QuantumFluidSystem widget handles all the visual effects
         super().paintEvent(event)

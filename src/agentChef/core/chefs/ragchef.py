@@ -189,8 +189,8 @@ class ResearchManager(BaseChef):
         }
     
     async def research_topic(self, topic, max_papers=5, max_search_results=10, 
-                           include_github=False, github_repos=None, callback=None,
-                           model_name=None):  # Add model_name parameter
+                        include_github=False, github_repos=None, callback=None,
+                        model_name=None):  # Add model_name parameter
         """Research a topic using ArXiv, web search, and optionally GitHub."""
         # Update model if provided
         if model_name:
@@ -211,43 +211,57 @@ class ResearchManager(BaseChef):
         
         update_progress(f"Starting research on: {topic}")
         
-        # Simplified ArXiv search query
+        # ArXiv search with proper error handling
         try:
             update_progress(f"Searching ArXiv for: {topic}")
             # Check if arxiv_searcher is available and not None
             if self.arxiv_searcher and hasattr(self.arxiv_searcher, 'search_papers'):
                 paper_info = await self.arxiv_searcher.search_papers(topic, max_results=max_papers)
                 arxiv_papers = paper_info if paper_info else []
+                
+                update_progress(f"Found {len(arxiv_papers)} relevant ArXiv papers")
+                
+                # Format paper information
+                formatted_papers = []
+                for paper in arxiv_papers:
+                    update_progress(f"Processing paper: {paper.get('title', 'Untitled')}")
+                    try:
+                        # Create a properly formatted paper object
+                        formatted_paper = {
+                            "title": paper.get('title', ''),
+                            "abstract": paper.get('abstract', ''),
+                            "authors": paper.get('authors', []),
+                            "content": paper.get('abstract', ''),  # Use abstract as content
+                            "formatted_info": paper.get('abstract', ''),  # Add this key for compatibility
+                            "metadata": {
+                                "arxiv_id": paper.get('arxiv_id', ''),
+                                "categories": paper.get('categories', []),
+                                "published": paper.get('published', ''),
+                                "arxiv_url": paper.get('arxiv_url', ''),
+                                "pdf_link": paper.get('pdf_link', '')
+                            }
+                        }
+                        formatted_papers.append(formatted_paper)
+                    except Exception as e:
+                        logger.error(f"Error formatting paper: {str(e)}")
+                        continue
+
+                self.research_state["processed_papers"] = formatted_papers
+                
             else:
                 logger.warning("ArXiv searcher not available")
                 arxiv_papers = []
+                formatted_papers = []
             
         except Exception as e:
             logger.error(f"Error searching ArXiv: {str(e)}")
             arxiv_papers = []
-            
-            self.research_state["arxiv_papers"] = arxiv_papers
-            update_progress(f"Found {len(arxiv_papers)} relevant ArXiv papers")
-            
-            # Format paper information
-            formatted_papers = []
-            for paper in arxiv_papers:
-                update_progress(f"Processing paper: {paper.get('title', 'Untitled')}")
-                try:
-                    formatted_info = await self.arxiv_searcher.format_paper_for_learning(paper)
-                    formatted_papers.append(formatted_info)
-                except Exception as e:
-                    logger.error(f"Error formatting paper: {str(e)}")
-                    continue
-            
-            self.research_state["processed_papers"] = formatted_papers
-            
-        except Exception as e:
-            update_progress(f"Error searching ArXiv: {str(e)}")
-            arxiv_papers = []
             formatted_papers = []
 
-        # 4. Perform web search with proper fallback
+        # Move this OUTSIDE the try/except block - this was the main bug
+        self.research_state["arxiv_papers"] = arxiv_papers
+
+        # Perform web search with proper fallback
         update_progress(f"Performing web search for: {topic}")
         try:
             # Use the DDG searcher directly since it's initialized
@@ -264,9 +278,10 @@ class ResearchManager(BaseChef):
         except Exception as e:
             logger.error(f"Error in web search: {str(e)}")
             web_results = []
+        
         self.research_state["search_results"] = web_results
         
-        # 5. Process GitHub repositories if requested
+        # Process GitHub repositories if requested
         if include_github and github_repos:
             update_progress(f"Processing GitHub repositories")
             repo_results = []
@@ -284,7 +299,7 @@ class ResearchManager(BaseChef):
             
             self.research_state["github_repos"] = repo_results
         
-        # 6. Generate a research summary
+        # Generate a research summary
         summary = self._generate_research_summary()
         self.research_state["summary"] = summary
         
@@ -332,15 +347,35 @@ class ResearchManager(BaseChef):
         # Extract paper content
         paper_contents = []
         for paper in papers:
-            if isinstance(paper, dict) and "formatted_info" in paper:
-                paper_contents.append(paper["formatted_info"])
+            if isinstance(paper, dict):
+                # Try different possible content keys
+                content = None
+                for key in ["formatted_info", "content", "abstract", "title"]:
+                    if key in paper and paper[key]:
+                        content = paper[key]
+                        break
+                
+                if content:
+                    paper_contents.append(content)
+                else:
+                    # If no content found, try to use the whole paper as string
+                    paper_str = json.dumps(paper, indent=2)
+                    if len(paper_str) > 100:  # Only if it has substantial content
+                        paper_contents.append(paper_str)
+                        update_progress(f"Using full paper data as content")
+                    else:
+                        update_progress(f"Skipping paper with no usable content: {list(paper.keys())}")
             elif isinstance(paper, str):
-                # Assume it's a path to a paper file
-                try:
-                    with open(paper, 'r', encoding='utf-8') as f:
-                        paper_contents.append(f.read())
-                except Exception as e:
-                    update_progress(f"Error reading paper file {paper}: {str(e)}")
+                # Assume it's a path to a paper file or direct content
+                if os.path.exists(paper):
+                    try:
+                        with open(paper, 'r', encoding='utf-8') as f:
+                            paper_contents.append(f.read())
+                    except Exception as e:
+                        update_progress(f"Error reading paper file {paper}: {str(e)}")
+                else:
+                    # Treat as direct content
+                    paper_contents.append(paper)
             else:
                 update_progress(f"Skipping paper with unknown format: {type(paper)}")
         

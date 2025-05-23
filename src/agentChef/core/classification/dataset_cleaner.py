@@ -64,51 +64,6 @@ class DatasetCleaner:
                     self.logger.info("Initialized OllamaLlamaIndexIntegration for DataFrame analysis")
                 except ImportError:
                     self.logger.warning("Neither LlamaIndex nor Ollama are available for advanced DataFrame querying")
-        
-    def analyze_dataset(self, 
-                       original_conversations: List[List[Dict[str, str]]], 
-                       expanded_conversations: List[List[Dict[str, str]]]) -> Dict[str, Any]:
-        """
-        Analyze expanded conversations to identify potential quality issues compared to originals.
-        
-        Args:
-            original_conversations: List of original conversations
-            expanded_conversations: List of expanded conversations
-            
-        Returns:
-            Dictionary with analysis results
-        """
-        self.logger.info("Analyzing expanded dataset quality...")
-        
-        analysis_results = {
-            "total_original": len(original_conversations),
-            "total_expanded": len(expanded_conversations),
-            "issues_by_type": {},
-            "detailed_issues": []
-        }
-        
-        # Convert to dataframes for easier analysis
-        orig_df = self._convert_conversations_to_df(original_conversations)
-        expanded_df = self._convert_conversations_to_df(expanded_conversations)
-        
-        # Analyze content length differences
-        orig_df['content_length'] = orig_df['value'].apply(len)
-        expanded_df['content_length'] = expanded_df['value'].apply(len)
-        
-        length_diff = self._analyze_length_differences(orig_df, expanded_df)
-        analysis_results["length_analysis"] = length_diff
-        
-        # If PandasQueryIntegration is available, use it for enhanced analysis
-        if self.pandas_query or self.ollama_query:
-            advanced_analysis = self._perform_advanced_analysis(orig_df, expanded_df)
-            analysis_results["advanced_analysis"] = advanced_analysis
-        
-        # Run NLP analysis on sample pairs
-        semantic_issues = self._analyze_semantic_quality(original_conversations, expanded_conversations)
-        analysis_results["issues_by_type"] = semantic_issues["issues_by_type"]
-        analysis_results["detailed_issues"] = semantic_issues["detailed_issues"]
-        
-        return analysis_results
     
     def _perform_advanced_analysis(self, orig_df: pd.DataFrame, expanded_df: pd.DataFrame) -> Dict[str, Any]:
         """
@@ -384,45 +339,173 @@ class DatasetCleaner:
             self.logger.error(f"Error cleaning turn content: {str(e)}")
             return expanded_content  # Return the original expanded content if cleaning fails
 
-    def _convert_conversations_to_df(self, conversations: List[List[Dict[str, str]]]) -> pd.DataFrame:
+    def _convert_conversations_to_df(self, conversations: List[Dict]) -> pd.DataFrame:
         """
-        Convert conversations to a DataFrame format for analysis.
+        Convert conversations to a pandas DataFrame for analysis.
         
         Args:
-            conversations: List of conversations to convert
+            conversations: List of conversation dictionaries
             
         Returns:
-            DataFrame with structured conversation data
+            DataFrame with conversation data
         """
-        data = []
+        if not conversations:
+            return pd.DataFrame()
         
+        rows = []
         for conv_idx, conversation in enumerate(conversations):
-            for turn_idx, turn in enumerate(conversation):
-                source = turn.get('from', '')
-                value = turn.get('value', '')
+            # Handle different conversation formats
+            if isinstance(conversation, dict):
+                # Check if it's a conversation with 'conversations' key
+                if 'conversations' in conversation:
+                    conv_data = conversation['conversations']
+                elif 'messages' in conversation:
+                    conv_data = conversation['messages']
+                else:
+                    # Assume the whole dict is the conversation data
+                    conv_data = conversation
                 
-                # Create a row for this turn
-                row = {
-                    'conversation_id': conv_idx,
-                    'turn_idx': turn_idx,
-                    'source': source,
-                    'content': value,
-                    'content_length': len(value),
-                    'word_count': len(value.split()),
-                    'is_question': '?' in value
+                # If conv_data is a list (typical conversation format)
+                if isinstance(conv_data, list):
+                    for turn_idx, turn in enumerate(conv_data):
+                        if isinstance(turn, dict):
+                            # Extract the actual content based on different possible keys
+                            content = ""
+                            role = turn.get('from', turn.get('role', 'unknown'))
+                            
+                            # Try different content keys
+                            for key in ['value', 'content', 'text', 'message']:
+                                if key in turn and turn[key]:
+                                    content = turn[key]
+                                    break
+                            
+                            if not content and 'human' in turn:
+                                content = turn['human']
+                            elif not content and 'gpt' in turn:
+                                content = turn['gpt']
+                            
+                            rows.append({
+                                'conversation_id': conv_idx,
+                                'turn_id': turn_idx,
+                                'role': role,
+                                'content': content,
+                                'content_length': len(content) if content else 0
+                            })
+                elif isinstance(conv_data, dict):
+                    # Handle single turn conversations
+                    content = ""
+                    for key in ['value', 'content', 'text', 'message', 'human', 'gpt']:
+                        if key in conv_data and conv_data[key]:
+                            content = conv_data[key]
+                            break
+                    
+                    rows.append({
+                        'conversation_id': conv_idx,
+                        'turn_id': 0,
+                        'role': 'unknown',
+                        'content': content,
+                        'content_length': len(content) if content else 0
+                    })
+        
+        if not rows:
+            # Return empty DataFrame with expected columns
+            return pd.DataFrame(columns=['conversation_id', 'turn_id', 'role', 'content', 'content_length'])
+        
+        return pd.DataFrame(rows)
+
+    def analyze_dataset(self, original_conversations: List[Dict], expanded_conversations: List[Dict]) -> Dict[str, Any]:
+        """
+        Analyze the quality of expanded conversations compared to originals.
+        
+        Args:
+            original_conversations: List of original conversation dictionaries
+            expanded_conversations: List of expanded conversation dictionaries
+            
+        Returns:
+            Dictionary containing analysis results
+        """
+        self.logger.info("Analyzing expanded dataset quality...")
+        
+        analysis_results = {
+            "total_original": len(original_conversations),
+            "total_expanded": len(expanded_conversations),
+            "issues_by_type": {},
+            "detailed_issues": []
+        }
+        
+        # Convert to dataframes for easier analysis
+        orig_df = self._convert_conversations_to_df(original_conversations)
+        expanded_df = self._convert_conversations_to_df(expanded_conversations)
+        
+        # Check if DataFrames are empty
+        if orig_df.empty or expanded_df.empty:
+            self.logger.warning("One or both DataFrames are empty, skipping analysis")
+            analysis_results["error"] = "Empty DataFrames - cannot perform analysis"
+            return analysis_results
+        
+        # Analyze content length differences using the 'content' column
+        if 'content' in orig_df.columns and 'content' in expanded_df.columns:
+            # Content length is already calculated in _convert_conversations_to_df
+            length_diff = self._analyze_length_differences(orig_df, expanded_df)
+            analysis_results["length_analysis"] = length_diff
+        else:
+            self.logger.warning("No content column found in DataFrames")
+            analysis_results["length_analysis"] = {"error": "No content column found"}
+        
+        # If PandasQueryIntegration is available, use it for enhanced analysis
+        if self.pandas_query or self.ollama_query:
+            try:
+                advanced_analysis = self._perform_advanced_analysis(orig_df, expanded_df)
+                analysis_results["advanced_analysis"] = advanced_analysis
+            except Exception as e:
+                self.logger.error(f"Error in advanced analysis: {str(e)}")
+                analysis_results["advanced_analysis"] = {"error": str(e)}
+        
+        # Run NLP analysis on sample pairs
+        try:
+            semantic_issues = self._analyze_semantic_quality(original_conversations, expanded_conversations)
+            analysis_results["issues_by_type"] = semantic_issues["issues_by_type"]
+            analysis_results["detailed_issues"] = semantic_issues["detailed_issues"]
+        except Exception as e:
+            self.logger.error(f"Error in semantic analysis: {str(e)}")
+            analysis_results["issues_by_type"] = {"error": str(e)}
+            analysis_results["detailed_issues"] = []
+        
+        return analysis_results
+
+    def _analyze_length_differences(self, orig_df: pd.DataFrame, expanded_df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Analyze differences in content length between original and expanded datasets.
+        
+        Args:
+            orig_df: DataFrame with original conversations
+            expanded_df: DataFrame with expanded conversations
+            
+        Returns:
+            Dictionary with length analysis results
+        """
+        try:
+            # Use the pre-calculated content_length column
+            orig_lengths = orig_df['content_length'].describe()
+            expanded_lengths = expanded_df['content_length'].describe()
+            
+            # Calculate percentage differences
+            mean_diff = ((expanded_lengths['mean'] - orig_lengths['mean']) / orig_lengths['mean']) * 100
+            median_diff = ((expanded_lengths['50%'] - orig_lengths['50%']) / orig_lengths['50%']) * 100
+            
+            return {
+                "original_stats": orig_lengths.to_dict(),
+                "expanded_stats": expanded_lengths.to_dict(),
+                "mean_length_change_percent": mean_diff,
+                "median_length_change_percent": median_diff,
+                "analysis": {
+                    "significant_change": abs(mean_diff) > 20,  # Flag if >20% change
+                    "direction": "increase" if mean_diff > 0 else "decrease"
                 }
-                
-                data.append(row)
-        
-        # Create DataFrame
-        if not data:
-            # Return an empty DataFrame with the expected columns
-            return pd.DataFrame(columns=[
-                'conversation_id', 'turn_idx', 'source', 'content', 
-                'content_length', 'word_count', 'is_question'
-            ])
-        
-        return pd.DataFrame(data)
+            }
+        except Exception as e:
+            self.logger.error(f"Error analyzing length differences: {str(e)}")
+            return {"error": str(e)}
     
     def set_model(self, model_name: str):
         """Update the model used for dataset cleaning."""
