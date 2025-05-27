@@ -8,6 +8,13 @@
 
 4. ensure dataset cleaner works (DOES IT?)
 
+vibe coding youtube vidoe tutorial
+agent chef video
+oarc crawlers video
+oarc video
+keep it simple, cover up voice, use carlig
+
+create a latex paper reprensentation of any code on the spot for better human readability with evals for what code should be looked into
 
 
 base prompt: 
