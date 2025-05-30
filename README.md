@@ -2,7 +2,7 @@
   <img src="assets/agentChef_logo.png" alt="agentChef logo" width="250"/>
 </p>
 <p align="center">
-  <a href="https://ko-fi.com/theborch"><img src="assets/buy me a coffee button.png" height="48"></a>
+  <a href="https://ko-fi.com/oll4m404rc"><img src="assets/buy me a coffee button.png" height="48"></a>
   <a href="https://discord.gg/dAzSYcnpdF"><img src="assets/Discord button.png" height="48"></a>
 </p>
 
