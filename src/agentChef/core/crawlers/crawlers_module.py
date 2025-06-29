@@ -1,15 +1,16 @@
 """crawlers_module.py
-This module provides wrappers around the oarc-crawlers package for:
+This module provides agent-focused wrappers around crawling functionality for:
 - WebCrawler: General web page crawling
 - ArxivSearcher: ArXiv paper lookup and parsing
 - DuckDuckGoSearcher: DuckDuckGo search API integration
 - GitHubCrawler: GitHub repository cloning and extraction
+- AgentDataManager: Unified interface for agent data management
 
-This version replaces the previous custom implementation with calls to the 
-oarc-crawlers package which provides more comprehensive functionality.
+This version integrates with the new agent-focused storage and prompt system
+to better support agent training and knowledge management.
 
 Written By: @Borcherdingl
-Date: 4/13/2025
+Date: 6/29/2025
 """
 
 import os
@@ -24,13 +25,28 @@ from datetime import datetime, UTC
 import asyncio
 
 # Import oarc-crawlers components
-from oarc_crawlers import (
-    WebCrawler,
-    ArxivCrawler, 
-    DDGCrawler,
-    GHCrawler,
-    ParquetStorage
-)
+try:
+    from oarc_crawlers import (
+        WebCrawler,
+        ArxivCrawler, 
+        DDGCrawler,
+        GHCrawler,
+        ParquetStorage as OARCParquetStorage
+    )
+    HAS_OARC_CRAWLERS = True
+except ImportError:
+    HAS_OARC_CRAWLERS = False
+    OARCParquetStorage = None
+    logging.warning("oarc-crawlers not available. Some features will be limited.")
+
+# Import our new agent-focused components
+try:
+    from agentChef.core.storage.conversation_storage import ConversationStorage, KnowledgeEntry
+    from agentChef.core.prompts.agent_prompt_manager import AgentPromptManager
+    HAS_AGENT_COMPONENTS = True
+except ImportError:
+    HAS_AGENT_COMPONENTS = False
+    logging.warning("Agent components not available. Some features will be limited.")
 
 # Configuration
 DATA_DIR = os.getenv('DATA_DIR', 'data')
@@ -180,7 +196,7 @@ class ArxivSearcher:
                 'pdf_link': paper.get('pdf_link', ''),
                 'published': paper.get('published', ''),
                 'updated': paper.get('updated', ''),
-                'arxiv_id': paper.get('arxiv_id', '')
+                'arxiv_id': paper.get('id', '')
             }
         else:
             # Handle other paper object types
@@ -408,8 +424,12 @@ class ParquetStorageWrapper:
         """Initialize the ParquetStorage wrapper."""
         self.data_dir = Path(data_dir)
         try:
-            self.storage = ParquetStorage()
-            logger.info("ParquetStorageWrapper initialized successfully")
+            if OARCParquetStorage:
+                self.storage = OARCParquetStorage()
+                logger.info("ParquetStorageWrapper initialized with OARC storage")
+            else:
+                self.storage = None
+                logger.warning("OARC ParquetStorage not available")
         except ImportError:
             logger.error("oarc_crawlers.ParquetStorage not available")
             self.storage = None
@@ -451,8 +471,188 @@ class ParquetStorageWrapper:
             return False
 
 
+class AgentDataManager:
+    """
+    Unified interface for managing agent data from various sources.
+    Integrates crawling, storage, and agent-specific processing.
+    """
+    
+    def __init__(self, agent_name: str, data_dir: Optional[str] = None):
+        """
+        Initialize the AgentDataManager.
+        
+        Args:
+            agent_name: Name of the agent this manager serves
+            data_dir: Directory for storing agent data
+        """
+        self.agent_name = agent_name
+        self.data_dir = Path(data_dir) if data_dir else Path(DATA_DIR)
+        
+        # Initialize storage and prompt management
+        if HAS_AGENT_COMPONENTS:
+            self.storage = ConversationStorage(self.data_dir)
+            self.prompt_manager = AgentPromptManager(self.data_dir / "prompts")
+        else:
+            self.storage = None
+            self.prompt_manager = None
+            
+        # Initialize crawlers
+        self.web_crawler = WebCrawlerWrapper()
+        self.arxiv_searcher = ArxivSearcher()
+        self.ddg_searcher = DuckDuckGoSearcher()
+        self.github_crawler = GitHubCrawler(data_dir)
+        
+        logger.info(f"Initialized AgentDataManager for agent: {agent_name}")
+    
+    def crawl_and_store_for_agent(self, source_type: str, source_params: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Crawl data from a source and store it in agent-specific format.
+        
+        Args:
+            source_type: Type of source (web, arxiv, ddg, github)
+            source_params: Parameters for the specific crawler
+            
+        Returns:
+            Dict containing crawl results and storage info
+        """
+        try:
+            # Crawl data based on source type
+            if source_type == "web":
+                crawler_result = self._crawl_web_for_agent(source_params)
+            elif source_type == "arxiv":
+                crawler_result = self._crawl_arxiv_for_agent(source_params)
+            elif source_type == "ddg":
+                crawler_result = self._crawl_ddg_for_agent(source_params)
+            elif source_type == "github":
+                crawler_result = self._crawl_github_for_agent(source_params)
+            else:
+                return {"error": f"Unknown source type: {source_type}"}
+            
+            # Store results in agent-specific format
+            if crawler_result and not crawler_result.get("error"):
+                storage_result = self._store_crawled_data_for_agent(
+                    crawler_result, 
+                    source_type, 
+                    source_params
+                )
+                return {
+                    "crawl_result": crawler_result,
+                    "storage_result": storage_result,
+                    "agent_name": self.agent_name
+                }
+            else:
+                return {"error": "Failed to crawl data", "details": crawler_result}
+                
+        except Exception as e:
+            logger.error(f"Error in crawl_and_store_for_agent: {e}")
+            return {"error": str(e)}
+    
+    def _store_crawled_data_for_agent(self, crawled_data: Dict[str, Any], 
+                                    source_type: str, source_params: Dict[str, Any]) -> Dict[str, Any]:
+        """Store crawled data in agent-specific format."""
+        if not self.storage:
+            return {"error": "Storage not available"}
+        
+        try:
+            # Convert crawled data to knowledge entries
+            knowledge_entries = self._convert_to_knowledge_entries(crawled_data, source_type)
+            
+            # Save knowledge entries
+            success = self.storage.save_knowledge(self.agent_name, knowledge_entries)
+            
+            # Also create a conversation about the crawled data
+            conversation = self._create_conversation_from_crawled_data(crawled_data, source_type)
+            conv_id = None
+            if conversation:
+                from agentChef.core.storage.conversation_storage import ConversationMetadata
+                metadata = ConversationMetadata(
+                    agent_name=self.agent_name,
+                    conversation_id="",
+                    created_at="",
+                    updated_at="",
+                    context=f"crawled_{source_type}",
+                    source="crawler",
+                    tags=[source_type, "crawled_data"]
+                )
+                conv_id = self.storage.save_conversation(self.agent_name, conversation, metadata)
+            
+            return {
+                "knowledge_saved": success,
+                "knowledge_count": len(knowledge_entries),
+                "conversation_id": conv_id,
+                "agent_name": self.agent_name
+            }
+            
+        except Exception as e:
+            logger.error(f"Error storing crawled data: {e}")
+            return {"error": str(e)}
+    
+    def _convert_to_knowledge_entries(self, crawled_data: Dict[str, Any], 
+                                    source_type: str) -> List['KnowledgeEntry']:
+        """Convert crawled data to knowledge entries."""
+        entries = []
+        source = crawled_data.get("source", source_type)
+        timestamp = crawled_data.get("timestamp", datetime.now().isoformat())
+        
+        if source_type == "web":
+            entry = KnowledgeEntry(
+                agent_name=self.agent_name,
+                entry_id=f"web_{hash(crawled_data.get('url', ''))}",
+                topic=f"web_content_{crawled_data.get('url', 'unknown')}",
+                content=crawled_data.get("content", ""),
+                knowledge_type="web_content",
+                source=crawled_data.get("url", "web"),
+                created_at=timestamp,
+                tags=["web", "crawled"]
+            )
+            entries.append(entry)
+            
+        return entries
+    
+    def _create_conversation_from_crawled_data(self, crawled_data: Dict[str, Any], 
+                                             source_type: str) -> Optional[List[Dict[str, Any]]]:
+        """Create a conversation about the crawled data."""
+        try:
+            if source_type == "web":
+                url = crawled_data.get("url", "")
+                content_preview = crawled_data.get("content", "")[:200] + "..."
+                
+                conversation = [
+                    {"from": "human", "value": f"What did you learn from crawling {url}?"},
+                    {"from": "gpt", "value": f"I crawled the webpage at {url} and extracted content: {content_preview}"}
+                ]
+                return conversation
+                
+        except Exception as e:
+            logger.error(f"Error creating conversation from crawled data: {e}")
+            return None
+    
+    def get_agent_knowledge_summary(self) -> Dict[str, Any]:
+        """Get a summary of all knowledge stored for this agent."""
+        if not self.storage:
+            return {"error": "Storage not available"}
+        
+        try:
+            # Get all knowledge entries
+            all_knowledge = self.storage.load_knowledge(self.agent_name)
+            
+            # Get statistics
+            stats = self.storage.get_agent_stats(self.agent_name)
+            
+            return {
+                "agent_name": self.agent_name,
+                "total_knowledge_entries": len(all_knowledge),
+                "agent_stats": stats,
+                "recent_entries": [entry.topic for entry in all_knowledge[-5:]] if all_knowledge else []
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting agent knowledge summary: {e}")
+            return {"error": str(e)}
+
+
 # Add API detection function
-def detect_oarc_api():
+def detect_oarc_crawlers_api():
     """Detect available OARC-Crawlers API methods."""
     api_info = {
         'arxiv_methods': [],
@@ -507,4 +707,4 @@ def detect_oarc_api():
     return api_info
 
 # Call this during module initialization
-_API_INFO = detect_oarc_api()
+_API_INFO = detect_oarc_crawlers_api()

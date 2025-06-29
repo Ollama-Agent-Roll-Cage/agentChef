@@ -37,6 +37,7 @@ try:
     from .core.generation.conversation_generator import OllamaConversationGenerator
     from .core.llamaindex.pandas_query import PandasQueryIntegration, OllamaLlamaIndexIntegration
     from .core.ollama.ollama_interface import OllamaInterface
+    from .pandas_rag import PandasRAG
 except ImportError as e:
     import logging
     logging.warning(f"Error importing ragchef components: {e}")
@@ -79,6 +80,7 @@ if not MENU_HTML_PATH.exists():
         logging.error(f"Default menu HTML not found at {default_html}")
 
 __all__ = [
+    'PandasRAG',
     'OllamaConversationGenerator',
     'DatasetExpander',
     'DatasetCleaner',

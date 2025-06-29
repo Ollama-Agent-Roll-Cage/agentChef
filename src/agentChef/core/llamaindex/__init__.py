@@ -1,5 +1,6 @@
 """LlamaIndex integration for natural language DataFrame querying."""
 
+#TODO remove?
 try:
     import pandas as pd
     from llama_index.experimental.query_engine import PandasQueryEngine

@@ -1,15 +1,17 @@
 """pandas_query_integration.py
 Integrates LlamaIndex's PandasQueryEngine into the research and dataset generation system.
-This module provides utilities for natural language querying of pandas DataFrames.
+This module provides utilities for natural language querying of pandas DataFrames with
+agent-specific prompt support and conversation storage integration.
 
 Written By: @BorcherdingL
-Date: 4/4/2025
+Date: 6/29/2025
 """
 
 import os
 import logging
 import pandas as pd
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, List, Optional, Union, Any, Tuple
+from pathlib import Path
 
 # LlamaIndex imports - handle gracefully
 try:
@@ -19,22 +21,139 @@ try:
 except ImportError:
     HAS_QUERY_ENGINE = False
 
+# Import our new modular components
+try:
+    from agentChef.core.prompts.agent_prompt_manager import AgentPromptManager
+    from agentChef.core.storage.conversation_storage import ConversationStorage
+    HAS_AGENT_COMPONENTS = True
+except ImportError:
+    HAS_AGENT_COMPONENTS = False
+    logging.warning("Agent components not available. Some features will be limited.")
+
 # Setup logging
 logger = logging.getLogger(__name__)
 
-class PandasQueryIntegration:
+class AbstractQueryEngine:
     """
-    Integrates LlamaIndex's PandasQueryEngine for natural language querying of pandas DataFrames.
+    Abstract base class for query engines that can be specialized for different agents.
+    Provides a common interface while allowing agent-specific customization.
     """
     
-    def __init__(self, verbose=True, synthesize_response=True):
+    def __init__(self, agent_name: str = "default", **kwargs):
+        """
+        Initialize the abstract query engine.
+        
+        Args:
+            agent_name: Name of the agent using this query engine
+            **kwargs: Additional configuration parameters
+        """
+        self.agent_name = agent_name
+        self.config = kwargs
+        
+        # Initialize prompt manager if available
+        if HAS_AGENT_COMPONENTS:
+            self.prompt_manager = AgentPromptManager()
+            self.storage = ConversationStorage()
+        else:
+            self.prompt_manager = None
+            self.storage = None
+    
+    def get_agent_prompt(self, prompt_type: str, **kwargs) -> Optional[str]:
+        """
+        Get an agent-specific prompt for the query.
+        
+        Args:
+            prompt_type: Type of prompt to retrieve
+            **kwargs: Variables for prompt formatting
+            
+        Returns:
+            Formatted prompt string or None
+        """
+        if self.prompt_manager:
+            return self.prompt_manager.get_prompt(self.agent_name, prompt_type, **kwargs)
+        return None
+    
+    def save_query_result(self, query: str, result: Any, metadata: Dict[str, Any] = None) -> bool:
+        """
+        Save query result as a conversation for the agent.
+        
+        Args:
+            query: The original query
+            result: Query result
+            metadata: Additional metadata
+            
+        Returns:
+            bool: True if saved successfully
+        """
+        if not self.storage:
+            return False
+        
+        try:
+            # Create a conversation from the query and result
+            conversation = [
+                {"from": "human", "value": query},
+                {"from": "gpt", "value": str(result)}
+            ]
+            
+            # Create metadata
+            from agentChef.core.storage.conversation_storage import ConversationMetadata
+            conv_metadata = ConversationMetadata(
+                agent_name=self.agent_name,
+                conversation_id="",  # Will be generated
+                created_at="",  # Will be generated
+                updated_at="",  # Will be generated
+                context="data_query",
+                template_format="query_response",
+                num_turns=2,
+                source="pandas_query",
+                tags=["query", "data_analysis"]
+            )
+            
+            if metadata:
+                conv_metadata.tags.extend(metadata.get("tags", []))
+            
+            conv_id = self.storage.save_conversation(
+                self.agent_name, 
+                conversation, 
+                conv_metadata
+            )
+            
+            return conv_id is not None
+            
+        except Exception as e:
+            logger.error(f"Failed to save query result: {e}")
+            return False
+    
+    def query(self, query: str, **kwargs) -> Dict[str, Any]:
+        """
+        Execute a query. To be implemented by subclasses.
+        
+        Args:
+            query: Natural language query
+            **kwargs: Additional query parameters
+            
+        Returns:
+            Dict containing query results
+        """
+        raise NotImplementedError("Subclasses must implement query method")
+
+class PandasQueryIntegration(AbstractQueryEngine):
+    """
+    Enhanced PandasQueryEngine integration with agent-specific prompts and storage.
+    """
+    
+    def __init__(self, agent_name: str = "default", verbose=True, synthesize_response=True, **kwargs):
         """
         Initialize the PandasQueryIntegration.
         
         Args:
-            verbose (bool): Whether to print verbose output.
-            synthesize_response (bool): Whether to synthesize a natural language response.
+            agent_name: Name of the agent using this query engine
+            verbose: Whether to print verbose output
+            synthesize_response: Whether to synthesize a natural language response
+            **kwargs: Additional configuration
         """
+        super().__init__(agent_name, **kwargs)
+        
         if not HAS_QUERY_ENGINE:
             logger.warning("PandasQueryEngine not available. Some features will be limited.")
             
@@ -50,17 +169,24 @@ class PandasQueryIntegration:
             self.use_local_models = False
             logger.warning("Local models not available. Some features will be limited.")
         
-    def create_query_engine(self, df: pd.DataFrame, custom_instructions: Optional[str] = None) -> Any:
+    def create_query_engine(self, df: pd.DataFrame, 
+                          prompt_type: str = "conversation_analysis",
+                          custom_instructions: Optional[str] = None) -> Any:
         """
-        Create a PandasQueryEngine for the given DataFrame.
+        Create a PandasQueryEngine with agent-specific prompts.
         
         Args:
-            df (pd.DataFrame): DataFrame to query.
-            custom_instructions (str, optional): Custom instructions for the query engine.
+            df: DataFrame to query
+            prompt_type: Type of agent prompt to use
+            custom_instructions: Override instructions
             
         Returns:
-            PandasQueryEngine: Query engine for natural language queries.
+            PandasQueryEngine: Query engine for natural language queries
         """
+        if not HAS_QUERY_ENGINE:
+            logger.error("PandasQueryEngine not available")
+            return None
+            
         try:
             # Create the query engine
             query_engine = PandasQueryEngine(
@@ -69,27 +195,33 @@ class PandasQueryIntegration:
                 synthesize_response=self.synthesize_response
             )
             
-            # Update prompts if custom instructions are provided
-            if custom_instructions:
-                # Get the current prompts
-                prompts = query_engine.get_prompts()
-                
-                # Create a new prompt with custom instructions
-                new_pandas_prompt = PromptTemplate(
-                    f"""You are working with a pandas dataframe in Python.
-                    The name of the dataframe is `df`.
-                    This is the result of `print(df.head())`:
-                    {{df_str}}
-
-                    Follow these instructions:
-                    {custom_instructions}
-                    Query: {{query_str}}
-
-                    Expression:"""
+            # Get agent-specific prompt or use custom instructions
+            instructions = custom_instructions
+            if not instructions and self.prompt_manager:
+                # Prepare DataFrame info for the prompt
+                df_info = f"Shape: {df.shape}, Columns: {list(df.columns)}"
+                agent_prompt = self.get_agent_prompt(
+                    prompt_type,
+                    df_info=df_info,
+                    context=f"DataFrame analysis for {self.agent_name}"
                 )
-                
-                # Update the prompts
-                query_engine.update_prompts({"pandas_prompt": new_pandas_prompt})
+                if agent_prompt:
+                    instructions = agent_prompt
+            
+            # Update prompts if we have instructions
+            if instructions:
+                try:
+                    # Get the current prompts
+                    prompts = query_engine.get_prompts()
+                    
+                    # Create a new prompt with agent-specific instructions
+                    new_pandas_prompt = PromptTemplate(instructions)
+                    
+                    # Update the prompts
+                    query_engine.update_prompts({"pandas_prompt": new_pandas_prompt})
+                    logger.info(f"Updated query engine with {prompt_type} prompt for agent {self.agent_name}")
+                except Exception as e:
+                    logger.warning(f"Could not update prompts: {e}")
                 
             return query_engine
             
@@ -97,94 +229,153 @@ class PandasQueryIntegration:
             logger.error(f"Error creating PandasQueryEngine: {str(e)}")
             raise
     
-    def query_dataframe(self, df: pd.DataFrame, query: str, custom_instructions: Optional[str] = None) -> Dict[str, Any]:
+    def query_dataframe(self, df: pd.DataFrame, query: str, 
+                       prompt_type: str = "conversation_analysis",
+                       custom_instructions: Optional[str] = None,
+                       save_result: bool = True) -> Dict[str, Any]:
         """
-        Query a DataFrame using natural language.
+        Query a DataFrame using natural language with agent-specific prompts.
         
         Args:
-            df (pd.DataFrame): DataFrame to query.
-            query (str): Natural language query.
-            custom_instructions (str, optional): Custom instructions for the query engine.
+            df: DataFrame to query
+            query: Natural language query
+            prompt_type: Type of agent prompt to use
+            custom_instructions: Override instructions
+            save_result: Whether to save the result as a conversation
             
         Returns:
-            Dict[str, Any]: Query results including response and metadata.
+            Dict containing query results and metadata
         """
         try:
-            # Create the query engine
-            query_engine = self.create_query_engine(df, custom_instructions)
+            # Create the query engine with agent-specific prompts
+            query_engine = self.create_query_engine(df, prompt_type, custom_instructions)
+            
+            if not query_engine:
+                return {
+                    "error": "Could not create query engine",
+                    "response": "Query engine not available",
+                    "pandas_instructions": ""
+                }
             
             # Execute the query
             response = query_engine.query(query)
             
-            # Return the response and metadata
-            return {
+            # Prepare result
+            result = {
                 "response": str(response),
                 "pandas_instructions": response.metadata.get("pandas_instruction_str", ""),
-                "raw_response": response
+                "raw_response": response,
+                "agent_name": self.agent_name,
+                "prompt_type": prompt_type
             }
+            
+            # Save result as conversation if requested
+            if save_result:
+                self.save_query_result(
+                    query, 
+                    result["response"], 
+                    {"prompt_type": prompt_type, "tags": ["dataframe_query"]}
+                )
+            
+            return result
             
         except Exception as e:
             logger.error(f"Error querying DataFrame: {str(e)}")
             return {
                 "error": str(e),
                 "response": f"Error querying DataFrame: {str(e)}",
-                "pandas_instructions": ""
+                "pandas_instructions": "",
+                "agent_name": self.agent_name
             }
     
-    def generate_dataset_insights(self, df: pd.DataFrame, num_insights: int = 5) -> List[Dict[str, Any]]:
+    def generate_agent_insights(self, df: pd.DataFrame, num_insights: int = 5) -> List[Dict[str, Any]]:
         """
-        Generate insights from a DataFrame using PandasQueryEngine.
+        Generate insights from a DataFrame using agent-specific analysis prompts.
         
         Args:
-            df (pd.DataFrame): DataFrame to analyze.
-            num_insights (int): Number of insights to generate.
+            df: DataFrame to analyze
+            num_insights: Number of insights to generate
             
         Returns:
-            List[Dict[str, Any]]: List of generated insights.
+            List of generated insights
         """
-        # Define common analysis queries
-        analysis_queries = [
-            "What is the overall shape and structure of this dataset?",
-            "Identify any missing values or data quality issues in the dataset.",
-            "What are the key statistical properties of the numerical columns?",
-            "Are there any significant correlations between variables?",
-            "What insights can you provide about the distribution of categorical variables?",
-            "Identify any potential outliers in the numerical columns.",
-            "What time-based patterns or trends exist in the data?",
-            "Which factors seem most predictive of the target variable?",
-            "Summarize the key findings from this dataset in 3-5 bullet points."
-        ]
-        
-        # Select queries to run
-        selected_queries = analysis_queries[:min(num_insights, len(analysis_queries))]
+        # Get agent-specific insight queries if available
+        insight_queries = self._get_agent_insight_queries(num_insights)
         
         # Generate insights
         insights = []
-        for query in selected_queries:
-            result = self.query_dataframe(df, query)
+        for i, (query, prompt_type) in enumerate(insight_queries[:num_insights]):
+            result = self.query_dataframe(
+                df, 
+                query, 
+                prompt_type=prompt_type,
+                save_result=False  # Don't save individual insights
+            )
             insights.append({
                 "query": query,
                 "insight": result["response"],
-                "pandas_code": result["pandas_instructions"]
+                "pandas_code": result["pandas_instructions"],
+                "prompt_type": prompt_type,
+                "index": i + 1
             })
             
+        # Save insights summary as conversation
+        if insights:
+            summary_query = f"Generated {len(insights)} insights for agent {self.agent_name}"
+            summary_response = f"Analysis complete. Generated insights: {[insight['query'] for insight in insights]}"
+            self.save_query_result(
+                summary_query, 
+                summary_response, 
+                {"tags": ["insights", "analysis_summary"]}
+            )
+            
         return insights
+    
+    def _get_agent_insight_queries(self, num_insights: int) -> List[Tuple[str, str]]:
+        """
+        Get agent-specific insight queries.
+        
+        Args:
+            num_insights: Number of insights requested
+            
+        Returns:
+            List of (query, prompt_type) tuples
+        """
+        # Default queries with corresponding prompt types
+        default_queries = [
+            ("What is the overall structure and key characteristics of this dataset?", "conversation_analysis"),
+            ("Identify any patterns or trends in the data that are relevant for agent training.", "knowledge_extraction"),
+            ("What are the most important features or variables for conversation generation?", "template_generation"),
+            ("Assess the quality and completeness of the data for agent development.", "performance_analysis"),
+            ("Extract key knowledge points that the agent should learn from this data.", "knowledge_extraction"),
+            ("Identify successful conversation patterns that can be used as templates.", "template_generation"),
+            ("What insights can help improve the agent's performance?", "performance_analysis"),
+            ("Summarize the main topics and themes present in the conversations.", "conversation_analysis")
+        ]
+        
+        # Try to get agent-specific queries from prompt manager
+        if self.prompt_manager and hasattr(self.prompt_manager, 'get_insight_queries'):
+            agent_queries = self.prompt_manager.get_insight_queries(self.agent_name, num_insights)
+            if agent_queries:
+                return agent_queries
+        
+        return default_queries[:num_insights]
 
-    def compare_datasets(self, df1: pd.DataFrame, df2: pd.DataFrame, 
+    def compare_agent_datasets(self, df1: pd.DataFrame, df2: pd.DataFrame, 
                         df1_name: str = "Original", df2_name: str = "Modified",
                         aspects: Optional[List[str]] = None) -> Dict[str, Any]:
         """
-        Compare two DataFrames and generate insights about the differences.
+        Compare two DataFrames with agent-specific comparison prompts.
         
         Args:
-            df1 (pd.DataFrame): First DataFrame.
-            df2 (pd.DataFrame): Second DataFrame.
-            df1_name (str): Name of the first DataFrame.
-            df2_name (str): Name of the second DataFrame.
-            aspects (List[str], optional): Specific aspects to compare.
+            df1: First DataFrame
+            df2: Second DataFrame
+            df1_name: Name of the first DataFrame
+            df2_name: Name of the second DataFrame
+            aspects: Specific aspects to compare
             
         Returns:
-            Dict[str, Any]: Comparison results.
+            Dict containing comparison results
         """
         if aspects is None:
             aspects = ["shape", "schema", "missing_values", "statistics", "distributions"]
@@ -212,56 +403,34 @@ class PandasQueryIntegration:
         # Concatenate for comparison
         combined_df = pd.concat([df1_subset, df2_subset], axis=0, ignore_index=True)
         
-        # Create the query engine for the combined dataset
-        query_engine = self.create_query_engine(combined_df)
-        
-        # Define comparison queries based on aspects
-        comparison_queries = []
-        
-        if "shape" in aspects:
-            comparison_queries.append(f"Compare the number of rows and columns between {df1_name} and {df2_name}.")
-        
-        if "schema" in aspects:
-            comparison_queries.append(f"Compare the data types and structure between {df1_name} and {df2_name}.")
-        
-        if "missing_values" in aspects:
-            comparison_queries.append(f"Compare the missing values between {df1_name} and {df2_name}.")
-        
-        if "statistics" in aspects:
-            comparison_queries.append(f"Compare the statistical properties of numerical columns between {df1_name} and {df2_name}.")
-        
-        if "distributions" in aspects:
-            comparison_queries.append(f"Compare the distributions of key variables between {df1_name} and {df2_name}.")
-        
-        # Execute comparison queries
+        # Generate comparison queries for each aspect
         comparison_results = {}
-        for query in comparison_queries:
-            try:
-                response = query_engine.query(query)
-                comparison_results[query] = {
-                    "response": str(response),
-                    "pandas_code": response.metadata.get("pandas_instruction_str", "")
-                }
-            except Exception as e:
-                comparison_results[query] = {
-                    "error": str(e),
-                    "response": f"Error comparing datasets: {str(e)}"
-                }
+        for aspect in aspects:
+            comparison_query = f"Compare the {aspect} between {df1_name} and {df2_name} datasets."
+            result = self.query_dataframe(
+                combined_df, 
+                comparison_query, 
+                prompt_type="performance_analysis",
+                save_result=False
+            )
+            comparison_results[aspect] = result
         
-        # Generate an overall summary
-        try:
-            summary_query = f"Provide a comprehensive summary of the key differences between {df1_name} and {df2_name} datasets."
-            summary_response = query_engine.query(summary_query)
-            overall_summary = str(summary_response)
-        except Exception as e:
-            overall_summary = f"Error generating summary: {str(e)}"
+        # Generate overall summary
+        summary_query = f"Provide a comprehensive summary of the key differences between {df1_name} and {df2_name} datasets for agent {self.agent_name}."
+        summary_result = self.query_dataframe(
+            combined_df, 
+            summary_query, 
+            prompt_type="performance_analysis",
+            save_result=True
+        )
         
         return {
             "comparison_details": comparison_results,
-            "overall_summary": overall_summary,
+            "overall_summary": summary_result["response"],
             "common_columns": common_columns,
             "unique_columns_df1": list(set(df1.columns) - set(common_columns)),
-            "unique_columns_df2": list(set(df2.columns) - set(common_columns))
+            "unique_columns_df2": list(set(df2.columns) - set(common_columns)),
+            "agent_name": self.agent_name
         }
 
 
