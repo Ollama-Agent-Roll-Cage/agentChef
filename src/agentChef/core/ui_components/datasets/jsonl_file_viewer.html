@@ -1,0 +1,977 @@
+    <div class="solar-system">
+        <div class="sun"></div>
+        <div class="earth-orbit">
+            <div class="earth">
+                <div class="moon-orbit">
+                    <div class="moon"></div>
+                </div>
+            </div>
+        </div>
+    </div><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSONL Conversation Viewer</title>
+    <style>
+        /* Space Theme Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            color: #E2E8F0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Enhanced space background with random stars */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(1px 1px at 23px 47px, rgba(255,255,255,0.9), transparent),
+                radial-gradient(2px 2px at 87px 23px, rgba(255,255,255,0.7), transparent),
+                radial-gradient(1px 1px at 145px 89px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 67px 156px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 234px 67px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 178px 34px, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 12px 134px, rgba(255,255,255,0.7), transparent),
+                radial-gradient(2px 2px at 298px 145px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 189px 78px, rgba(255,255,255,0.9), transparent),
+                radial-gradient(1px 1px at 56px 234px, rgba(255,255,255,0.4), transparent);
+            background-repeat: repeat;
+            background-size: 350px 200px;
+            animation: sparkle 25s linear infinite;
+            pointer-events: none;
+            z-index: -2;
+        }
+
+        /* Nebula lighting effects */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 40% 40%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes sparkle {
+            from { transform: translateX(0) translateY(0); }
+            to { transform: translateX(350px) translateY(-50px); }
+        }
+
+        /* Solar System Animation */
+        .solar-system {
+            position: fixed;
+            top: 50%;
+            left: -300px;
+            width: 300px;
+            height: 300px;
+            pointer-events: none;
+            z-index: -1;
+            animation: orbit-solar-system 120s linear infinite;
+        }
+
+        @keyframes orbit-solar-system {
+            from { transform: translateX(-300px) translateY(-50%); }
+            to { transform: translateX(calc(100vw + 300px)) translateY(-50%); }
+        }
+
+        .sun {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle at 30% 30%, #FFF700 0%, #FFD700 30%, #FFA500 60%, #FF8C00 100%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 
+                0 0 20px #FFD700, 
+                0 0 40px rgba(255, 215, 0, 0.4),
+                0 0 60px rgba(255, 215, 0, 0.2);
+            animation: sun-glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes sun-glow {
+            from { 
+                box-shadow: 
+                    0 0 20px #FFD700, 
+                    0 0 40px rgba(255, 215, 0, 0.4),
+                    0 0 60px rgba(255, 215, 0, 0.2);
+            }
+            to { 
+                box-shadow: 
+                    0 0 30px #FFD700, 
+                    0 0 60px rgba(255, 215, 0, 0.6),
+                    0 0 90px rgba(255, 215, 0, 0.3);
+            }
+        }
+
+        .earth-orbit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 180px;
+            height: 90px;
+            transform: translate(-50%, -50%) rotateX(60deg);
+            animation: earth-orbit 8s linear infinite;
+        }
+
+        @keyframes earth-orbit {
+            from { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(0deg); }
+            to { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(360deg); }
+        }
+
+        .earth {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 12px;
+            height: 12px;
+            background: 
+                radial-gradient(circle at 25% 25%, #87CEEB 0%, #4ADE80 20%, #22C55E 40%, #16A34A 60%, #1E40AF 80%, #1E3A8A 100%);
+            border-radius: 50%;
+            transform: translateX(-50%);
+            box-shadow: 
+                inset -3px -3px 6px rgba(0, 0, 0, 0.3),
+                inset 2px 2px 4px rgba(255, 255, 255, 0.1),
+                0 0 10px rgba(34, 197, 94, 0.3);
+            animation: earth-rotation 4s linear infinite;
+            position: relative;
+        }
+
+        .earth::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 8px;
+            height: 8px;
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(34, 197, 94, 0.8) 0%, transparent 40%),
+                radial-gradient(ellipse at 60% 20%, rgba(34, 197, 94, 0.6) 0%, transparent 30%),
+                radial-gradient(ellipse at 40% 70%, rgba(34, 197, 94, 0.7) 0%, transparent 35%);
+            border-radius: 50%;
+            animation: earth-continents 8s linear infinite;
+        }
+
+        @keyframes earth-rotation {
+            from { 
+                background: radial-gradient(circle at 25% 25%, #87CEEB 0%, #4ADE80 20%, #22C55E 40%, #16A34A 60%, #1E40AF 80%, #1E3A8A 100%);
+            }
+            25% { 
+                background: radial-gradient(circle at 75% 25%, #1E40AF 0%, #4ADE80 20%, #22C55E 40%, #16A34A 60%, #87CEEB 80%, #1E3A8A 100%);
+            }
+            50% { 
+                background: radial-gradient(circle at 75% 75%, #22C55E 0%, #1E40AF 20%, #87CEEB 40%, #4ADE80 60%, #16A34A 80%, #1E3A8A 100%);
+            }
+            75% { 
+                background: radial-gradient(circle at 25% 75%, #4ADE80 0%, #22C55E 20%, #1E40AF 40%, #87CEEB 60%, #16A34A 80%, #1E3A8A 100%);
+            }
+            to { 
+                background: radial-gradient(circle at 25% 25%, #87CEEB 0%, #4ADE80 20%, #22C55E 40%, #16A34A 60%, #1E40AF 80%, #1E3A8A 100%);
+            }
+        }
+
+        @keyframes earth-continents {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .moon-orbit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 20px;
+            transform: translate(-50%, -50%) rotateX(45deg);
+            animation: moon-orbit 2s linear infinite;
+        }
+
+        @keyframes moon-orbit {
+            from { transform: translate(-50%, -50%) rotateX(45deg) rotateZ(0deg); }
+            to { transform: translate(-50%, -50%) rotateX(45deg) rotateZ(360deg); }
+        }
+
+        .moon {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            background: 
+                radial-gradient(circle at 30% 30%, #F3F4F6 0%, #E5E7EB 40%, #D1D5DB 70%, #9CA3AF 100%);
+            border-radius: 50%;
+            transform: translateX(-50%);
+            box-shadow: 
+                inset -1px -1px 2px rgba(0, 0, 0, 0.4),
+                inset 1px 1px 1px rgba(255, 255, 255, 0.2),
+                0 0 6px rgba(229, 231, 235, 0.2);
+        }
+
+        .moon::before {
+            content: '';
+            position: absolute;
+            top: 0.5px;
+            left: 0.5px;
+            width: 3px;
+            height: 3px;
+            background: 
+                radial-gradient(ellipse at 20% 40%, rgba(156, 163, 175, 0.3) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 30%, rgba(156, 163, 175, 0.2) 0%, transparent 40%);
+            border-radius: 50%;
+        }
+
+        /* Header Styling */
+        .header {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(100, 116, 139, 0.3);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #64FFDA;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.6) 0%, rgba(37, 99, 235, 0.6) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #E2E8F0;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.8) 0%, rgba(37, 99, 235, 0.8) 100%);
+            border-color: rgba(59, 130, 246, 0.6);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, rgba(100, 116, 139, 0.6) 0%, rgba(71, 85, 105, 0.6) 100%);
+            border-color: rgba(100, 116, 139, 0.4);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, rgba(100, 116, 139, 0.8) 0%, rgba(71, 85, 105, 0.8) 100%);
+            border-color: rgba(100, 116, 139, 0.6);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(100, 116, 139, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .status-info {
+            color: #94A3B8;
+        }
+
+        .status-message {
+            color: #64FFDA;
+            font-weight: 500;
+        }
+
+        /* Grid View Styling */
+        .grid-view {
+            display: block;
+        }
+
+        .conversation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .conversation-book {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(51, 65, 85, 0.6) 100%);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            height: 200px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .conversation-book:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .conversation-book::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #3B82F6, #10B981, #F59E0B, #EF4444);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .conversation-book:hover::before {
+            opacity: 1;
+        }
+
+        .book-icon {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: #64FFDA;
+        }
+
+        .book-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #E2E8F0;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .book-meta {
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: #94A3B8;
+        }
+
+        .book-stats {
+            display: flex;
+            gap: 8px;
+        }
+
+        .book-number {
+            color: #64FFDA;
+            font-weight: 500;
+        }
+
+        /* Detail View Styling */
+        .detail-view {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 200;
+        }
+
+        .detail-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .detail-sidebar {
+            width: 50px;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(100, 116, 139, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 5px;
+            gap: 15px;
+            flex-shrink: 0;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.6) 0%, rgba(220, 38, 38, 0.6) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #E2E8F0;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-btn:hover {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.8) 0%, rgba(220, 38, 38, 0.8) 100%);
+            transform: translateY(-1px);
+        }
+
+        .detail-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            width: calc(100vw - 50px);
+        }
+
+        .detail-header {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(100, 116, 139, 0.3);
+            padding: 12px 25px;
+            flex-shrink: 0;
+        }
+
+        .detail-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #E2E8F0;
+            margin-bottom: 4px;
+        }
+
+        .detail-meta {
+            font-size: 10px;
+            color: #94A3B8;
+            display: flex;
+            gap: 12px;
+        }
+
+        .conversation-display {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 25px;
+            background: rgba(15, 23, 42, 0.6);
+            min-height: 0;
+            width: 100%;
+        }
+
+        .message {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(51, 65, 85, 0.6) 100%);
+            border: 1px solid rgba(100, 116, 139, 0.2);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 12px;
+            backdrop-filter: blur(10px);
+            position: relative;
+            line-height: 1.6;
+            border-left: 4px solid;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .message-human {
+            border-left-color: #3B82F6;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+        }
+
+        .message-gpt {
+            border-left-color: #10B981;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .message-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .message-human .message-label {
+            color: #60A5FA;
+        }
+
+        .message-gpt .message-label {
+            color: #34D399;
+        }
+
+        .message-number {
+            font-size: 10px;
+            color: #64748B;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .message-content {
+            font-size: 14px;
+            color: #E2E8F0;
+            white-space: pre-wrap;
+            line-height: 1.7;
+        }
+
+        /* Scrollbar Styling */
+        .conversation-display::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .conversation-display::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        .conversation-display::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #3B82F6 0%, #10B981 100%);
+            border-radius: 4px;
+        }
+
+        .conversation-display::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #2563EB 0%, #059669 100%);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748B;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .conversation-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 15px;
+            }
+            
+            .detail-sidebar {
+                width: 45px;
+                padding: 10px 3px;
+            }
+            
+            .detail-content {
+                width: calc(100vw - 45px);
+            }
+            
+            .conversation-display {
+                padding: 15px 20px;
+            }
+            
+            .detail-header {
+                padding: 10px 20px;
+            }
+            
+            .back-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Solar System Animation -->
+    <div class="solar-system">
+        <div class="sun"></div>
+        <div class="earth-orbit">
+            <div class="earth">
+                <div class="moon-orbit">
+                    <div class="moon"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="header-title">
+                <span>📚</span>
+                <span>Conversation Library</span>
+            </div>
+            <div class="header-controls">
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" class="file-input" accept=".jsonl,.json" multiple>
+                    <label for="fileInput" class="btn">📁 Load Files</label>
+                </div>
+                <button class="btn btn-secondary" onclick="exportData()">💾 Export</button>
+                <button class="btn btn-secondary" onclick="clearData()">🗑️ Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-info">
+                <span id="rowCount">0 conversations</span>
+            </div>
+            <div class="status-message" id="statusMessage">
+                Load a JSONL file to begin exploring conversations
+            </div>
+        </div>
+
+        <!-- Grid View -->
+        <div class="grid-view" id="gridView">
+            <div class="conversation-grid" id="conversationGrid">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📖</div>
+                    <div class="empty-state-title">No Conversations Loaded</div>
+                    <div class="empty-state-text">Upload a JSONL file to start browsing conversations</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail View -->
+    <div class="detail-view" id="detailView">
+        <div class="detail-container">
+            <div class="detail-sidebar">
+                <button class="back-btn" onclick="closeDetailView()" title="Back to grid">←</button>
+            </div>
+            <div class="detail-content">
+                <div class="detail-header">
+                    <div class="detail-title" id="detailTitle">Conversation Title</div>
+                    <div class="detail-meta" id="detailMeta">
+                        <span>👤 0 Human</span>
+                        <span>🤖 0 Assistant</span>
+                        <span>💬 0 Total Messages</span>
+                    </div>
+                </div>
+                <div class="conversation-display" id="conversationDisplay">
+                    <!-- Messages will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = [];
+        let selectedConversation = null;
+
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Update status message
+        function updateStatus(message) {
+            document.getElementById('statusMessage').textContent = message;
+        }
+
+        // Initialize the application
+        function init() {
+            const fileInput = document.getElementById('fileInput');
+            fileInput.addEventListener('change', handleFiles);
+            updateStatus('Ready to load JSONL files');
+        }
+
+        // Handle file upload
+        function handleFiles(event) {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+
+            updateStatus('Loading files...');
+            
+            const filePromises = files.map(file => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const content = e.target.result;
+                            const data = parseJSONL(content);
+                            resolve(data);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsText(file);
+                });
+            });
+
+            Promise.all(filePromises)
+                .then(results => {
+                    currentData = results.flat();
+                    displayConversations();
+                    updateStatus(`Loaded ${currentData.length} conversations from ${files.length} file(s)`);
+                })
+                .catch(error => {
+                    console.error('Error loading files:', error);
+                    updateStatus('Error loading files. Please check the console for details.');
+                });
+        }
+
+        // Parse JSONL content
+        function parseJSONL(content) {
+            const lines = content.trim().split('\n');
+            const data = [];
+            
+            lines.forEach((line, index) => {
+                if (line.trim()) {
+                    try {
+                        const parsed = JSON.parse(line.trim());
+                        data.push(parsed);
+                    } catch (error) {
+                        console.warn(`Error parsing line ${index + 1}:`, error);
+                    }
+                }
+            });
+            
+            return data;
+        }
+
+        // Display conversations in grid
+        function displayConversations() {
+            const grid = document.getElementById('conversationGrid');
+            
+            if (currentData.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📖</div>
+                        <div class="empty-state-title">No Conversations Loaded</div>
+                        <div class="empty-state-text">Upload a JSONL file to start browsing conversations</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const conversationCards = currentData.map((conversation, index) => {
+                if (!Array.isArray(conversation) || conversation.length === 0) return '';
+                
+                // Get title from first human message
+                const firstHuman = conversation.find(msg => msg.from === 'human');
+                const title = firstHuman ? 
+                    firstHuman.value.split(' ').slice(0, 8).join(' ') + 
+                    (firstHuman.value.split(' ').length > 8 ? '...' : '') :
+                    'Untitled Conversation';
+
+                const humanCount = conversation.filter(msg => msg.from === 'human').length;
+                const gptCount = conversation.filter(msg => msg.from === 'gpt').length;
+                const totalMessages = conversation.length;
+
+                return `
+                    <div class="conversation-book" onclick="openConversation(${index})">
+                        <div class="book-icon">📖</div>
+                        <div class="book-title">${escapeHtml(title)}</div>
+                        <div class="book-meta">
+                            <div class="book-stats">
+                                <span>👤 ${humanCount}</span>
+                                <span>🤖 ${gptCount}</span>
+                            </div>
+                            <div class="book-number">#${index + 1}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            grid.innerHTML = conversationCards;
+            updateRowCount();
+        }
+
+        // Open conversation in detail view
+        function openConversation(index) {
+            selectedConversation = currentData[index];
+            if (!selectedConversation) return;
+
+            const firstHuman = selectedConversation.find(msg => msg.from === 'human');
+            const title = firstHuman ? 
+                firstHuman.value.split(' ').slice(0, 12).join(' ') + 
+                (firstHuman.value.split(' ').length > 12 ? '...' : '') :
+                'Untitled Conversation';
+
+            const humanCount = selectedConversation.filter(msg => msg.from === 'human').length;
+            const gptCount = selectedConversation.filter(msg => msg.from === 'gpt').length;
+            const totalMessages = selectedConversation.length;
+
+            // Update detail view header
+            document.getElementById('detailTitle').textContent = title;
+            document.getElementById('detailMeta').innerHTML = `
+                <span>👤 ${humanCount} Human</span>
+                <span>🤖 ${gptCount} Assistant</span>
+                <span>💬 ${totalMessages} Total Messages</span>
+            `;
+
+            // Render conversation messages
+            const messagesHtml = selectedConversation.map((message, msgIndex) => {
+                const role = message.from || 'unknown';
+                const content = message.value || '';
+                const escapedContent = escapeHtml(content);
+                
+                const roleClass = role === 'human' ? 'message-human' : 'message-gpt';
+                const roleLabel = role === 'human' ? '👤 Human' : '🤖 Assistant';
+                
+                return `
+                    <div class="message ${roleClass}">
+                        <div class="message-header">
+                            <div class="message-label">${roleLabel}</div>
+                            <div class="message-number">#${msgIndex + 1}</div>
+                        </div>
+                        <div class="message-content">${escapedContent}</div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('conversationDisplay').innerHTML = messagesHtml;
+            
+            // Show detail view
+            document.getElementById('detailView').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close detail view
+        function closeDetailView() {
+            document.getElementById('detailView').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            selectedConversation = null;
+        }
+
+        // Update row count
+        function updateRowCount() {
+            const count = currentData.length;
+            document.getElementById('rowCount').textContent = 
+                count === 1 ? '1 conversation' : `${count} conversations`;
+        }
+
+        // Export data
+        function exportData() {
+            if (currentData.length === 0) {
+                updateStatus('No data to export');
+                return;
+            }
+
+            const dataStr = currentData.map(item => JSON.stringify(item)).join('\n');
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'conversations_export.jsonl';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            URL.revokeObjectURL(url);
+            updateStatus('Data exported successfully');
+        }
+
+        // Clear data
+        function clearData() {
+            currentData = [];
+            selectedConversation = null;
+            displayConversations();
+            closeDetailView();
+            updateStatus('Data cleared');
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('detailView').style.display === 'block') {
+                closeDetailView();
+            }
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

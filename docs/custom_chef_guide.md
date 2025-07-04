@@ -1,401 +1,388 @@
 # Creating Custom Chefs with AgentChef
 
-## Core Functionality (UI-Independent)
+AgentChef v0.2.8 provides a modular architecture for building custom AI agent pipelines ("chefs"). This guide shows you how to create your own specialized agents.
 
-AgentChef's core functionality can be used without any UI components. Here's how:
-
-1. Create a headless chef:
+## Quick Start - Simple Custom Chef
 
 ```python
-from agentChef.core.chefs import BaseChef
+from agentChef import BaseChef, PandasRAG
+import pandas as pd
 
-class HeadlessChef(BaseChef):
+class MyDataChef(BaseChef):
     def __init__(self):
         super().__init__(
-            name="headless_chef",
-            model_name="llama3",
-            enable_ui=False  # Disable UI components
+            name="my_data_chef",
+            model_name="llama3.2:3b",
+            enable_ui=False  # Start without UI
         )
-        self.setup_components()
         
-    def setup_components(self):
-        """Set up only the core processing components."""
-        # Dataset components
-        self.ollama = OllamaInterface(model_name=self.model_name)
-        self.expander = DatasetExpander(ollama_interface=self.ollama)
-        self.cleaner = DatasetCleaner(ollama_interface=self.ollama)
-        
-        # Storage and analysis
-        self.storage = ParquetStorageWrapper()
-        self.pandas_query = PandasQueryIntegration()
-        
-        # Register components
-        self.register_component("expander", self.expander)
-        self.register_component("cleaner", self.cleaner)
-```
-
-2. Use core components directly:
-
-```python
-# Direct component usage
-async def process_dataset(self, input_data: List[Dict[str, Any]]):
-    # Generate conversations
-    conversations = await self.ollama.chat(messages=[...])
-    
-    # Expand dataset
-    expanded = await self.expander.expand_conversation_dataset(
-        conversations=conversations,
-        expansion_factor=2
-    )
-    
-    # Clean data
-    cleaned = await self.cleaner.clean_dataset(
-        original_conversations=conversations,
-        expanded_conversations=expanded
-    )
-    
-    # Save results
-    self.storage.save_to_parquet(
-        cleaned, 
-        "output.parquet"
-    )
-```
-
-3. Handle events programmatically:
-
-```python
-def setup_callbacks(self):
-    """Set up event handling without UI."""
-    self.register_callback("process_start", self.log_start)
-    self.register_callback("process_complete", self.log_complete)
-    
-def log_start(self, data):
-    """Log process start."""
-    logging.info(f"Processing started: {data}")
-    
-def log_complete(self, result):
-    """Log process completion."""
-    logging.info(f"Processing complete: {result}")
-```
-
-## Core Components (No UI Required)
-
-These components work independently of any UI:
-
-1. LLM Integration:
-```python
-from agentChef.core.ollama import OllamaInterface
-
-ollama = OllamaInterface(model_name="llama3")
-response = await ollama.chat(messages=[...])
-```
-
-2. Dataset Processing:
-```python
-from agentChef.core.augmentation import DatasetExpander
-from agentChef.core.classification import DatasetCleaner
-
-expander = DatasetExpander(ollama_interface=ollama)
-cleaner = DatasetCleaner(ollama_interface=ollama)
-```
-
-3. Data Storage:
-```python
-from agentChef.core.crawlers import ParquetStorageWrapper
-
-storage = ParquetStorageWrapper()
-storage.save_to_parquet(data, "output.parquet")
-```
-
-4. Analysis Tools:
-```python
-from agentChef.core.llamaindex import PandasQueryIntegration
-
-query_engine = PandasQueryIntegration()
-results = query_engine.query_dataframe(df, "analyze this data")
-```
-
-## Example: Command-Line Chef
-
-Here's a complete example of a chef that runs entirely from the command line:
-
-```python
-class CLIChef(BaseChef):
-    def __init__(self):
-        super().__init__(
-            name="cli_chef",
-            model_name="llama3",
-            enable_ui=False
+        # Initialize PandasRAG for data analysis
+        self.rag = PandasRAG(
+            data_dir=f"./chef_data/{self.name}",
+            model_name=self.model_name
         )
-        self.setup_components()
         
-    async def run(self, input_file: str, output_file: str):
-        """Process data from command line."""
-        # Load data
-        data = self.storage.load_from_parquet(input_file)
-        
-        # Process
-        result = await self.process(data)
-        
-        # Save
-        self.storage.save_to_parquet(result, output_file)
-        return result
-
-# Usage from command line
-if __name__ == "__main__":
-    import asyncio
-    import argparse
+        # Register a specialized agent
+        self.agent_id = self.rag.register_agent(
+            "data_specialist",
+            system_prompt="You are a data analysis specialist focused on business insights.",
+            description="Analyzes business data and provides actionable recommendations"
+        )
     
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--input", required=True)
-    parser.add_argument("--output", required=True)
-    args = parser.parse_args()
-    
-    chef = CLIChef()
-    result = asyncio.run(chef.run(args.input, args.output))
+    async def process(self, dataframe: pd.DataFrame, question: str) -> str:
+        """Process data analysis requests."""
+        return self.rag.query(
+            dataframe=dataframe,
+            question=question,
+            agent_id=self.agent_id,
+            save_conversation=True
+        )
+
+# Usage
+chef = MyDataChef()
+df = pd.read_csv("sales_data.csv")
+result = await chef.process(df, "What are our top performing products?")
+print(result)
 ```
 
-## Optional UI Integration
+## Core Architecture
 
-If you later decide to add a UI, you can:
+AgentChef chefs are built on these core components:
 
-1. Enable UI support:
+### 1. BaseChef Class
 ```python
-chef = MyChef(enable_ui=True)
-```
+from agentChef import BaseChef
 
-2. Add UI components:
-```python
-from agentChef.core.ui_components import ChefUI
-chef.ui = ChefUI(chef)
-```
-
-## Creating Your First Chef
-
-1. First, inherit from BaseChef:
-
-```python
-from agentChef.core.chefs import BaseChef
-
-class MyCustomChef(BaseChef):
+class MyChef(BaseChef):
     def __init__(self):
         super().__init__(
             name="my_chef",
-            model_name="llama3",
-            enable_ui=True
+            model_name="llama3.2:3b",
+            enable_ui=False  # UI is optional
         )
         self.setup_components()
+    
+    def setup_components(self):
+        """Initialize your chef's components."""
+        pass
+    
+    async def process(self, input_data):
+        """Main processing method - implement your logic here."""
+        raise NotImplementedError
 ```
 
-2. Add your components:
+### 2. Available Components
 
+**PandasRAG** - For data analysis and conversation:
 ```python
-def setup_components(self):
-    # Add dataset components
-    self.register_component("expander", DatasetExpander(
-        ollama_interface=self.ollama
-    ))
-    self.register_component("cleaner", DatasetCleaner(
-        ollama_interface=self.ollama
-    ))
-    
-    # Add crawlers if needed
-    self.register_component("web_crawler", WebCrawlerWrapper())
+from agentChef import PandasRAG
+
+self.rag = PandasRAG(model_name=self.model_name)
+agent_id = self.rag.register_agent("specialist", system_prompt="...")
 ```
 
-3. Implement core methods:
-
+**ResearchManager** - For research workflows:
 ```python
-async def process(self, input_data: Any) -> Dict[str, Any]:
-    """Process input through your pipeline."""
-    self.emit_event("process_start", input_data)
-    
-    # Your processing logic here
-    result = await self.ollama.chat(...)
-    
-    self.emit_event("process_complete", result)
-    return {"result": result}
+from agentChef import ResearchManager
 
-async def generate(self, **kwargs) -> Dict[str, Any]:
-    """Generate content."""
-    # Your generation logic here
-    pass
+self.research = ResearchManager(model_name=self.model_name)
 ```
 
-4. Add a UI (optional):
+**OllamaInterface** - For direct LLM interaction:
+```python
+from agentChef import OllamaInterface
+
+self.ollama = OllamaInterface(model_name=self.model_name)
+response = self.ollama.chat(messages=[...])
+```
+
+**Dataset Tools** - For data augmentation:
+```python
+from agentChef import DatasetExpander, DatasetCleaner
+
+self.expander = DatasetExpander(ollama_interface=self.ollama)
+self.cleaner = DatasetCleaner(ollama_interface=self.ollama)
+```
+
+## Example: Research Chef
 
 ```python
-def setup_ui(self):
-    """Set up custom UI elements."""
-    if not self.ui:
-        return
+from agentChef import BaseChef, ResearchManager, PandasRAG
+import asyncio
+
+class ResearchChef(BaseChef):
+    def __init__(self):
+        super().__init__(name="research_chef", model_name="llama3.2:3b")
         
-    # Add custom widgets
-    self.ui.add_text_input("input", "Enter input:")
-    self.ui.add_button("process", "Process", self.on_process_click)
+        # Research capabilities
+        self.research_manager = ResearchManager(
+            data_dir=f"./chef_data/{self.name}/research",
+            model_name=self.model_name
+        )
+        
+        # Conversational capabilities
+        self.rag = PandasRAG(
+            data_dir=f"./chef_data/{self.name}/conversations", 
+            model_name=self.model_name
+        )
+        
+        # Research assistant agent
+        self.research_agent = self.rag.register_agent(
+            "research_assistant",
+            system_prompt="You are a research assistant specializing in academic paper analysis and synthesis.",
+            description="Helps with research workflows and paper analysis"
+        )
     
-    # Add progress tracking
-    self.register_callback("process_start", self.ui.show_progress)
-    self.register_callback("process_complete", self.ui.hide_progress)
+    async def research_topic(self, topic: str, max_papers: int = 3) -> str:
+        """Research a topic and provide conversational summary."""
+        # Do the research
+        research_results = await self.research_manager.research_topic(
+            topic=topic,
+            max_papers=max_papers,
+            max_search_results=5
+        )
+        
+        # Create summary DataFrame for analysis
+        papers_data = []
+        for paper in research_results.get('processed_papers', []):
+            papers_data.append({
+                'title': paper.get('title', ''),
+                'abstract': paper.get('abstract', ''),
+                'authors': ', '.join(paper.get('authors', [])),
+                'url': paper.get('url', '')
+            })
+        
+        if papers_data:
+            df = pd.DataFrame(papers_data)
+            
+            # Get conversational summary
+            summary = self.rag.query(
+                dataframe=df,
+                question=f"Provide a comprehensive summary of the research on '{topic}' based on these papers.",
+                agent_id=self.research_agent,
+                save_conversation=True
+            )
+            
+            return summary
+        else:
+            return f"No research papers found for topic: {topic}"
+    
+    async def ask_about_research(self, question: str) -> str:
+        """Ask questions about previous research."""
+        # This will have context from previous research calls
+        dummy_df = pd.DataFrame([{"context": "research_session"}])
+        return self.rag.query(
+            dataframe=dummy_df,
+            question=question,
+            agent_id=self.research_agent,
+            save_conversation=True
+        )
+
+# Usage
+async def main():
+    chef = ResearchChef()
+    
+    # Research a topic
+    summary = await chef.research_topic("transformer neural networks", max_papers=2)
+    print("Research Summary:", summary)
+    
+    # Ask follow-up questions
+    followup = await chef.ask_about_research("What are the main advantages of transformers?")
+    print("Follow-up:", followup)
+
+asyncio.run(main())
 ```
 
-## Using Components
-
-AgentChef provides many built-in components:
-
-- OllamaInterface: LLM integration
-- DatasetExpander: Data augmentation  
-- DatasetCleaner: Quality validation
-- WebCrawlerWrapper: Web content fetching
-- ParquetStorage: Data persistence
-- PandasQuery: Data analysis
-- PyVis: Visualization
-
-Example using components:
+## Example: File Analysis Chef
 
 ```python
-# Get component
-expander = self.components["expander"]
+from agentChef import BaseChef, PandasRAG
+from pathlib import Path
+import pandas as pd
 
-# Use component
-expanded_data = await expander.expand_conversation_dataset(
-    conversations=conversations,
-    expansion_factor=2
-)
-```
+class FileAnalysisChef(BaseChef):
+    def __init__(self):
+        super().__init__(name="file_chef", model_name="llama3.2:3b")
+        
+        self.rag = PandasRAG(
+            data_dir=f"./chef_data/{self.name}",
+            model_name=self.model_name
+        )
+        
+        # File analysis specialist
+        self.file_agent = self.rag.register_agent(
+            "file_analyst",
+            system_prompt="You are a file analysis specialist. Analyze file contents and provide insights.",
+            description="Specializes in analyzing and understanding file contents"
+        )
+    
+    def ingest_file(self, file_path: str) -> bool:
+        """Ingest a file for analysis."""
+        path = Path(file_path)
+        
+        if not path.exists():
+            return False
+        
+        # Read file content based on type
+        if path.suffix == '.csv':
+            content = f"CSV file with data:\n{pd.read_csv(path).head().to_string()}"
+        elif path.suffix in ['.txt', '.md']:
+            content = path.read_text(encoding='utf-8')
+        else:
+            content = f"File: {path.name} (type: {path.suffix})"
+        
+        # Add to knowledge base
+        return self.rag.add_knowledge(
+            agent_id=self.file_agent,
+            content=content,
+            source=f"file:{path.name}",
+            metadata={"file_path": str(path), "file_type": path.suffix}
+        )
+    
+    async def analyze_files(self, question: str) -> str:
+        """Analyze ingested files."""
+        dummy_df = pd.DataFrame([{"context": "file_analysis"}])
+        return self.rag.query(
+            dataframe=dummy_df,
+            question=question,
+            agent_id=self.file_agent,
+            save_conversation=True
+        )
 
-## Building UIs
+# Usage
+chef = FileAnalysisChef()
+chef.ingest_file("data.csv")
+chef.ingest_file("README.md")
 
-AgentChef uses PyQt6 for UIs. Key features:
-
-1. Basic Interface:
-```python
-# The base UI provides:
-- Input/output areas
-- Progress tracking
-- Settings panel
-- Status bar
-```
-
-2. Custom Widgets:
-```python 
-def setup_ui(self):
-    # Add custom widgets
-    self.ui.add_tab("Research")
-    self.ui.add_tree_view("results")
-    self.ui.add_graph_view("visualization")
-```
-
-3. Event Handling:
-```python 
-def on_process_click(self):
-    """Handle process button click."""
-    input_text = self.ui.get_input("input")
-    asyncio.create_task(self.process(input_text))
+result = await chef.analyze_files("What can you tell me about the files I've uploaded?")
+print(result)
 ```
 
 ## Best Practices
 
-1. Use async/await for long operations
-2. Emit events for progress tracking  
-3. Handle errors gracefully
-4. Clean up resources properly
-5. Follow the MCP protocol
-6. Add comprehensive logging
+### 1. Component Organization
+```python
+def setup_components(self):
+    """Organize components logically."""
+    # Core LLM interface
+    self.ollama = OllamaInterface(model_name=self.model_name)
+    
+    # Conversational capabilities
+    self.rag = PandasRAG(model_name=self.model_name)
+    
+    # Specialized components
+    self.register_component("expander", DatasetExpander(self.ollama))
+    self.register_component("cleaner", DatasetCleaner(self.ollama))
+```
 
-## Example: Complete Chef
+### 2. Error Handling
+```python
+async def process(self, input_data):
+    try:
+        result = await self.some_operation(input_data)
+        self.emit_event("process_complete", result)
+        return result
+    except Exception as e:
+        self.logger.error(f"Processing failed: {e}")
+        self.emit_event("process_error", str(e))
+        return {"error": str(e)}
+```
 
-Here's a complete example chef:
+### 3. Configuration
+```python
+def __init__(self, config: dict = None):
+    config = config or {}
+    super().__init__(
+        name=config.get("name", "my_chef"),
+        model_name=config.get("model", "llama3.2:3b")
+    )
+```
+
+## Adding UI (Optional)
+
+If you want to add a UI later:
 
 ```python
-class DataAnalysisChef(BaseChef):
+class MyChefWithUI(BaseChef):
     def __init__(self):
         super().__init__(
-            name="data_analysis",
-            model_name="llama3",
-            enable_ui=True
+            name="my_chef",
+            enable_ui=True  # Enable UI
         )
-        
-        # Setup components
-        self.register_component(
-            "pandas_query",
-            PandasQueryIntegration(ollama_interface=self.ollama)
-        )
-        
-        self.register_component(
-            "visualizer",
-            PyVisGraphBuilder()
-        )
-        
-    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze input data."""
-        self.emit_event("analysis_start")
-        
-        # Query the data
-        query_results = await self.components["pandas_query"].query_dataframe(
-            input_data["df"],
-            input_data["query"]
-        )
-        
-        # Visualize results
-        graph = self.components["visualizer"].build_graph(query_results)
-        
-        self.emit_event("analysis_complete")
-        
-        return {
-            "query_results": query_results,
-            "visualization": graph
-        }
-        
+    
     def setup_ui(self):
-        """Setup analysis UI."""
-        if not self.ui:
-            return
-            
-        # Add data input
-        self.ui.add_file_input("data", "Select Data File:")
-        
-        # Add query input
-        self.ui.add_text_input("query", "Enter Query:")
-        
-        # Add visualization area
-        self.ui.add_graph_view("results")
-        
-        # Add analyze button
-        self.ui.add_button("analyze", "Analyze", self.on_analyze_click)
-        
-    def on_analyze_click(self):
-        """Handle analyze button click."""
-        data_file = self.ui.get_input("data")
-        query = self.ui.get_input("query")
-        
-        df = pd.read_parquet(data_file)
-        asyncio.create_task(self.process({
-            "df": df,
-            "query": query
-        }))
+        """Custom UI setup."""
+        if self.ui:
+            self.ui.add_button("process", "Process Data", self.on_process_click)
+    
+    def on_process_click(self):
+        """Handle UI interactions."""
+        asyncio.create_task(self.process(...))
+```
+
+## Testing Your Chef
+
+```python
+# Simple test script
+async def test_chef():
+    chef = MyChef()
+    
+    # Test basic functionality
+    result = await chef.process("test input")
+    assert result is not None
+    
+    # Test conversation capability
+    if hasattr(chef, 'rag'):
+        df = pd.DataFrame({"test": [1, 2, 3]})
+        response = chef.rag.query(df, "Analyze this data", agent_id="test")
+        assert isinstance(response, str)
+    
+    print("✅ Chef tests passed!")
+
+asyncio.run(test_chef())
 ```
 
 ## Publishing Your Chef
 
-1. Create a package:
-```bash
-mkdir my_chef
-cd my_chef
-touch setup.py
+1. **Package Structure:**
+```
+my_chef_package/
+├── setup.py
+├── my_chef/
+│   ├── __init__.py
+│   └── chef.py
+└── README.md
 ```
 
-2. Add to PyPI:
+2. **setup.py:**
+```python
+from setuptools import setup, find_packages
+
+setup(
+    name="my-chef-package",
+    version="0.1.0",
+    packages=find_packages(),
+    install_requires=["agentChef>=0.2.8"],
+    author="Your Name",
+    description="My custom AgentChef implementation"
+)
+```
+
+3. **Share:**
 ```bash
+pip install build twine
 python -m build
 python -m twine upload dist/*
 ```
 
-3. Share with the community!
+## Next Steps
+
+- Explore the [examples directory](../src/examples/) for more complex implementations
+- Check out [PandasRAG guide](pandas_rag_guide.md) for data analysis features
+- Join the community to share your chefs!
 
 ## Getting Help
 
-- Join our Discord community
-- Check the documentation
-- File issues on GitHub
-- Share your chefs!
+- File issues on GitHub for bugs
+- Check existing examples for patterns
+- Join our Discord for community support

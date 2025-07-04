@@ -115,3 +115,9 @@ def main():
         agent_id=agent_id,
         include_history=False  # Disable history
     )
+    print(f"Response without history context: {response_no_history}")
+    
+    print("\n✅ Conversation history demo complete!")
+
+if __name__ == "__main__":
+    main()

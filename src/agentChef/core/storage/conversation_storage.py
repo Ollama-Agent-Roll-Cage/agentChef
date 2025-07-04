@@ -300,33 +300,41 @@ class ConversationStorage:
             logger.error(f"Error saving knowledge for {agent_name}: {e}")
             return False
     
-    def load_knowledge(self, agent_name: str, topic: Optional[str] = None) -> List[KnowledgeEntry]:
+    def load_knowledge(self, agent_name: str) -> List['KnowledgeEntry']:
         """
         Load knowledge entries for an agent.
         
         Args:
             agent_name: Name of the agent
-            topic: Optional topic filter
             
         Returns:
-            List of knowledge entries
+            List of KnowledgeEntry objects
         """
         try:
             agent_dir = self._get_agent_dir(agent_name, "knowledge")
             knowledge_file = agent_dir / "knowledge_base.parquet"
             
+            if not knowledge_file.exists():
+                return []
+            
             df = self.storage.load_from_parquet(knowledge_file)
             if df is None:
                 return []
             
-            # Filter by topic if specified
-            if topic:
-                df = df[df['topic'].str.contains(topic, case=False, na=False)]
-            
-            # Convert to KnowledgeEntry objects
+            # Convert DataFrame rows to KnowledgeEntry objects
             entries = []
             for _, row in df.iterrows():
-                entry = KnowledgeEntry(**row.to_dict())
+                entry = KnowledgeEntry(
+                    agent_name=row.get('agent_name', agent_name),
+                    entry_id=row.get('entry_id', ''),
+                    topic=row.get('topic', ''),
+                    content=row.get('content', ''),
+                    knowledge_type=row.get('knowledge_type', 'fact'),
+                    confidence=row.get('confidence', 1.0),
+                    source=row.get('source', 'unknown'),
+                    created_at=row.get('created_at', ''),
+                    tags=row.get('tags', [])
+                )
                 entries.append(entry)
             
             return entries
@@ -430,105 +438,108 @@ class ConversationStorage:
         
         return list(agents)
     
+    def get_conversations(self, agent_name: str, limit: int = 10) -> pd.DataFrame:
+        """
+        Get conversations for an agent as a DataFrame.
+        
+        Args:
+            agent_name: Name of the agent
+            limit: Maximum number of conversations to return
+            
+        Returns:
+            DataFrame with conversation data
+        """
+        try:
+            agent_dir = self._get_agent_dir(agent_name, "conversations")
+            if not agent_dir.exists():
+                return pd.DataFrame()
+            
+            conversations = []
+            
+            # Get all conversation files
+            conv_files = list(agent_dir.glob("*.parquet"))
+            conv_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)  # Most recent first
+            
+            for conv_file in conv_files[:limit]:
+                try:
+                    df = self.storage.load_from_parquet(conv_file)
+                    if df is not None:
+                        # Convert the parquet data to conversation format
+                        for _, row in df.iterrows():
+                            conversations.append({
+                                'role': row.get('from', 'unknown'),
+                                'content': row.get('value', ''),
+                                'timestamp': row.get('timestamp', ''),
+                                'conversation_id': row.get('conversation_id', ''),
+                                'agent_name': row.get('agent_name', agent_name)
+                            })
+                        
+                except Exception as e:
+                    logger.warning(f"Error reading conversation file {conv_file}: {e}")
+                    continue
+            
+            return pd.DataFrame(conversations)
+            
+        except Exception as e:
+            logger.error(f"Error getting conversations for {agent_name}: {e}")
+            return pd.DataFrame()
+
     def get_agent_stats(self, agent_name: str) -> Dict[str, Any]:
         """
-        Get statistics about an agent's stored data.
+        Get statistics for an agent.
         
         Args:
             agent_name: Name of the agent
             
         Returns:
-            Dictionary with statistics
+            Dict with agent statistics
         """
         try:
+            conversations_df = self.get_conversations(agent_name, limit=1000)  # Get more for stats
+            knowledge_entries = self.load_knowledge(agent_name)
+            
             stats = {
-                "agent_name": agent_name,
-                "num_conversations": len(self.list_conversations(agent_name)),
-                "num_knowledge_entries": 0,
-                "num_templates": 0,
-                "total_turns": 0,
-                "data_size_mb": 0
+                'total_conversations': len(conversations_df),
+                'total_knowledge_entries': len(knowledge_entries),
+                'conversation_roles': conversations_df['role'].value_counts().to_dict() if not conversations_df.empty else {},
+                'knowledge_types': {},
+                'last_activity': '',
+                'agent_name': agent_name
             }
             
-            # Count knowledge entries
-            knowledge = self.load_knowledge(agent_name)
-            stats["num_knowledge_entries"] = len(knowledge)
+            # Get knowledge type distribution
+            if knowledge_entries:
+                knowledge_types = {}
+                for entry in knowledge_entries:
+                    k_type = entry.knowledge_type
+                    knowledge_types[k_type] = knowledge_types.get(k_type, 0) + 1
+                stats['knowledge_types'] = knowledge_types
+                
+                # Get most recent activity
+                recent_entries = sorted(knowledge_entries, key=lambda x: x.created_at, reverse=True)
+                if recent_entries:
+                    stats['last_activity'] = recent_entries[0].created_at
             
-            # Count templates
-            agent_templates_dir = self._get_agent_dir(agent_name, "templates")
-            template_files = list(agent_templates_dir.glob("*.json"))
-            stats["num_templates"] = len(template_files)
-            
-            # Count total turns across all conversations
-            total_turns = 0
-            for conv_id in self.list_conversations(agent_name):
-                result = self.load_conversation(agent_name, conv_id)
-                if result:
-                    conversation, _ = result
-                    total_turns += len(conversation)
-            stats["total_turns"] = total_turns
-            
-            # Calculate approximate data size
-            agent_dirs = [
-                self._get_agent_dir(agent_name, "conversations"),
-                self._get_agent_dir(agent_name, "knowledge"),
-                self._get_agent_dir(agent_name, "templates")
-            ]
-            
-            total_size = 0
-            for agent_dir in agent_dirs:
-                for file_path in agent_dir.rglob("*"):
-                    if file_path.is_file():
-                        total_size += file_path.stat().st_size
-            
-            stats["data_size_mb"] = round(total_size / (1024 * 1024), 2)
+            # Get most recent conversation timestamp
+            if not conversations_df.empty and 'timestamp' in conversations_df.columns:
+                recent_convs = conversations_df['timestamp'].dropna()
+                if not recent_convs.empty:
+                    most_recent = recent_convs.max()
+                    if most_recent and (not stats['last_activity'] or most_recent > stats['last_activity']):
+                        stats['last_activity'] = most_recent
             
             return stats
             
         except Exception as e:
-            logger.error(f"Error getting stats for {agent_name}: {e}")
-            return {"agent_name": agent_name, "error": str(e)}
-    
-    def query_conversations(self, agent_name: str, query_params: Dict[str, Any]) -> List[str]:
-        """
-        Query conversations based on parameters.
-        
-        Args:
-            agent_name: Name of the agent
-            query_params: Parameters to filter conversations
-            
-        Returns:
-            List of matching conversation IDs
-        """
-        try:
-            matching_conversations = []
-            
-            for conv_id in self.list_conversations(agent_name):
-                # Load metadata for filtering
-                metadata_file = self.metadata_dir / agent_name / f"{conv_id}_meta.json"
-                if metadata_file.exists():
-                    with open(metadata_file, 'r') as f:
-                        metadata = json.load(f)
-                    
-                    # Apply filters
-                    match = True
-                    for key, value in query_params.items():
-                        if key in metadata:
-                            if isinstance(value, str) and value not in str(metadata[key]):
-                                match = False
-                                break
-                            elif isinstance(value, (int, float)) and metadata[key] != value:
-                                match = False
-                                break
-                    
-                    if match:
-                        matching_conversations.append(conv_id)
-            
-            return matching_conversations
-            
-        except Exception as e:
-            logger.error(f"Error querying conversations for {agent_name}: {e}")
-            return []
+            logger.error(f"Error getting agent stats for {agent_name}: {e}")
+            return {
+                'total_conversations': 0,
+                'total_knowledge_entries': 0,
+                'agent_name': agent_name,
+                'error': str(e)
+            }
+
+# ...existing code...
 
 if __name__ == "__main__":
     # Example usage

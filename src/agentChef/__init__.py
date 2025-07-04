@@ -1,99 +1,102 @@
 """
-ragchef - Unified Dataset Research, Augmentation, & Generation Chef
-=====================================================================
+AgentChef - AI Agent Development Framework
+=========================================
 
-A comprehensive suite of tools for researching, generating, expanding, and cleaning 
-conversation datasets powered by local Ollama models.
+A comprehensive toolkit for building, training, and deploying AI agents with natural language capabilities.
 
-Main Components:
----------------
-- OllamaConversationGenerator: Generate conversations from text content
-- DatasetExpander: Create variations of existing conversation datasets
-- DatasetCleaner: Identify and fix quality issues in datasets
-- OllamaPandasQuery: Natural language querying of pandas DataFrames
-- ResearchManager: Main interface for the research workflow
-
-All components use local Ollama models, with no external API dependencies.
+Core Components:
+- PandasRAG: Script-friendly interface for data analysis with conversation history
+- ResearchManager: Complete research pipeline (RAGChef example)
+- BaseChef: Framework for building custom agent pipelines
+- Storage & Generation tools: For building sophisticated agent workflows
 """
 
 __version__ = '0.2.8'
 
-# Import main components
+# Core Chef Framework
+from .core.chefs.base_chef import BaseChef
+from .core.chefs.pandas_rag import PandasRAG
+from .core.chefs.ragchef import ResearchManager
+
+# Data Processing & Generation
+from .core.generation.conversation_generator import OllamaConversationGenerator
+from .core.augmentation.dataset_expander import DatasetExpander
+from .core.classification.dataset_cleaner import DatasetCleaner
+from .core.classification.classification import Classifier
+
+# Interfaces & Storage
+from .core.ollama.ollama_interface import OllamaInterface
+from .core.llamaindex.pandas_query import PandasQueryIntegration
+
+# Crawlers & Research Tools
+from .core.crawlers.crawlers_module import (
+    WebCrawlerWrapper,
+    ArxivSearcher,
+    DuckDuckGoSearcher,
+    GitHubCrawler,
+    ParquetStorageWrapper
+)
+
+# Agent Management (Optional - graceful fallback)
 try:
-    import logging
-    from .core.chefs.ragchef import ResearchManager
-    from .core.chefs.base_chef import BaseChef
+    from .core.storage.conversation_storage import ConversationStorage, KnowledgeEntry
+    from .core.prompts.agent_prompt_manager import AgentPromptManager
+    HAS_AGENT_STORAGE = True
+except ImportError:
+    HAS_AGENT_STORAGE = False
+
+# UI Components (Optional)
+try:
     from .core.ui_components.RagchefUI.ui_module import RagchefUI
     from .core.ui_components.menu_module import AgentChefMenu
-    from .core.augmentation.dataset_expander import DatasetExpander
-    from .core.classification.dataset_cleaner import DatasetCleaner
-    from .core.classification.classification import Classifier
-    from .core.crawlers.crawlers_module import (
-        WebCrawlerWrapper,
-        ArxivSearcher,
-        DuckDuckGoSearcher,
-        GitHubCrawler
-    )
-    from .core.generation.conversation_generator import OllamaConversationGenerator
-    from .core.llamaindex.pandas_query import PandasQueryIntegration, OllamaLlamaIndexIntegration
-    from .core.ollama.ollama_interface import OllamaInterface
-    from .pandas_rag import PandasRAG
-except ImportError as e:
-    import logging
-    logging.warning(f"Error importing ragchef components: {e}")
+    HAS_UI = True
+except ImportError:
+    HAS_UI = False
 
-# Check for required dependencies
+# Check for Ollama availability
 try:
     import ollama
     HAS_OLLAMA = True
 except ImportError:
     HAS_OLLAMA = False
     import logging
-    logging.warning("Ollama not installed. Most functionality will be limited. Install with 'pip install ollama'")
+    logging.warning("Ollama not installed. Install with: pip install ollama")
 
-# Optional UI components
-try:
-    from .core.ui_components.RagchefUI.ui_module import RagchefUI
-    HAS_UI = True
-except ImportError:
-    HAS_UI = False
-
-# Update resource paths
-import os
-from pathlib import Path
-
-# Define package paths
-PACKAGE_DIR = Path(__file__).parent
-MENU_HTML_PATH = PACKAGE_DIR / "core" / "ui_components" / "menu" / "agentChefMenu.html"
-DOCS_DIR = PACKAGE_DIR / "docs"
-
-# Create docs directory if needed
-DOCS_DIR.mkdir(exist_ok=True)
-
-# Create default menu HTML if it doesn't exist
-if not MENU_HTML_PATH.exists():
-    import shutil
-    default_html = PACKAGE_DIR / "agentChefMenu.html"
-    if default_html.exists():
-        shutil.copy2(default_html, MENU_HTML_PATH)
-    else:
-        logging.error(f"Default menu HTML not found at {default_html}")
-
+# Main exports for users
 __all__ = [
-    'PandasRAG',
+    # Core Framework
+    'BaseChef',
+    'PandasRAG', 
+    'ResearchManager',
+    
+    # Data Processing
     'OllamaConversationGenerator',
     'DatasetExpander',
     'DatasetCleaner',
-    'PandasQueryIntegration',
-    'OllamaLlamaIndexIntegration',
-    'ResearchManager',
+    'Classifier',
+    
+    # Interfaces
     'OllamaInterface',
-    'WebCrawlerWrapper', 
+    'PandasQueryIntegration',
+    
+    # Research Tools
+    'WebCrawlerWrapper',
     'ArxivSearcher', 
-    'DuckDuckGoSearcher', 
+    'DuckDuckGoSearcher',
     'GitHubCrawler',
+    'ParquetStorageWrapper',
+    
+    # Optional exports
+    'ConversationStorage',
+    'KnowledgeEntry', 
+    'AgentPromptManager',
     'RagchefUI',
-    'BaseChef',
-    'AgentChefMenu',
-    'Classifier'
+    'AgentChefMenu'
 ]
+
+# Clean up optional exports based on availability
+if not HAS_AGENT_STORAGE:
+    __all__ = [x for x in __all__ if x not in ['ConversationStorage', 'KnowledgeEntry', 'AgentPromptManager']]
+
+if not HAS_UI:
+    __all__ = [x for x in __all__ if x not in ['RagchefUI', 'AgentChefMenu']]

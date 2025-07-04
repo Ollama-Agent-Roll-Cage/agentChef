@@ -1,0 +1,7 @@
+{
+  "agent_id": "data_analyst",
+  "system_prompt": "You are a helpful data analyst. Analyze data and provide clear insights.",
+  "description": "A data analyst focused on extracting insights from datasets.",
+  "created_at": "2025-07-02T14:49:27.053029",
+  "updated_at": "2025-07-02T14:49:27.053029"
+}

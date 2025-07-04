@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAGchef - AI Research & Dataset Generation Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #0a0a0f;
+            --secondary-bg: rgba(15, 15, 25, 0.8);
+            --glass-bg: rgba(20, 20, 35, 0.4);
+            --accent-primary: #00ffff;
+            --accent-secondary: #ff00ff;
+            --accent-tertiary: #ffff00;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #606060;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-color: rgba(0, 255, 255, 0.2);
+            --particle-color: #00ffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Particle System Background */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        /* Glass Morphism Container */
+        .glass-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 20px 0;
+            margin-bottom: 32px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent-primary);
+            text-shadow: 0 0 20px var(--accent-primary);
+        }
+
+        .logo-icon {
+            font-size: 28px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px var(--accent-primary); }
+            to { text-shadow: 0 0 30px var(--accent-primary), 0 0 40px var(--accent-primary); }
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: var(--glass-bg);
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+        @media (max-width: 1024px) {
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--primary-bg);
+            box-shadow: 0 4px 20px rgba(0, 255, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            height: 8px;
+            margin: 16px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 8px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-bar.indeterminate {
+            width: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                var(--accent-primary), 
+                transparent
+            );
+            animation: indeterminate 1.5s infinite;
+        }
+
+        @keyframes indeterminate {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Log/Output Areas */
+        .log-container {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            color: var(--text-secondary);
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            padding: 4px 0;
+        }
+
+        .log-entry.success { color: #00ff88; }
+        .log-entry.error { color: #ff4444; }
+        .log-entry.warning { color: #ffaa00; }
+        .log-entry.info { color: var(--accent-primary); }
+
+        /* Cards */
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        /* Stats */
+        .stat-item {
+            text-align: center;
+            padding: 16px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent-primary);
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* Model Selection */
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .model-card {
+            background: var(--glass-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .model-card:hover, .model-card.selected {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        .model-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .model-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: 0.3s;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-secondary);
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+            background-color: var(--primary-bg);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--primary-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-secondary);
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--accent-primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .nav-tabs {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .main-container {
+                padding: 0 16px;
+            }
+
+            .glass-container {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particleCanvas"></canvas>
+    
+    <header class="header">
+        <div class="header-content glass-container">
+            <div class="logo">
+                <span class="logo-icon">🧪</span>
+                <span>RAGchef</span>
+            </div>
+            <nav class="nav-tabs">
+                <a href="#research" class="nav-tab active" data-tab="research">Research</a>
+                <a href="#generate" class="nav-tab" data-tab="generate">Generate</a>
+                <a href="#process" class="nav-tab" data-tab="process">Process</a>
+                <a href="#analyze" class="nav-tab" data-tab="analyze">Analyze</a>
+                <a href="#settings" class="nav-tab" data-tab="settings">Settings</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Research Tab -->
+        <div id="research" class="tab-content active">
+            <div class="grid grid-2">
+                <div class="glass-container">
+                    <div class="card-title">🔬 Research Configuration</div>
+                    <div class="card-subtitle">Configure your research parameters</div>
+                    
+                    <form id="researchForm">
+                        <div class="form-group">
+                            <label class="form-label">Research Topic</label>
+                            <input type="text" class="form-input" id="researchTopic" 
+                                   placeholder="Enter your research topic..." required>
+                        </div>
+                        
+                        <div class="grid grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Max Papers</label>
+                                <input type="number" class="form-input" id="maxPapers" 
+                                       value="5" min="1" max="20">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Max Search Results</label>
+                                <input type="number" class="form-input" id="maxSearch" 
+                                       value="10" min="1" max="50">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="includeGithub" style="margin-right: 8px;">
+                                Include GitHub Repositories
+                            </label>
+                        </div>
+                        
+                        <div class="form-group" id="githubReposGroup" style="display: none;">
+                            <label class="form-label">GitHub Repository URLs</label>
+                            <textarea class="form-textarea" id="githubRepos" 
+                                      placeholder="Enter repository URLs (one per line)..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" id="startResearchBtn">
+                            <span class="loading-spinner" style="display: none;"></span>
+                            🚀 Start Research
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="glass-container">
+                    <div class="card-title">📊 Research Progress</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="researchProgress"></div>
+                    </div>
+                    <div class="log-container" id="researchLog">
+                        <div class="log-entry info">Ready to start research...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-container">
+                <div class="card-title">📄 Research Results</div>
+                <div class="grid grid-4" id="researchStats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="arxivCount">0</span>
+                        <span class="stat-label">ArXiv Papers</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="webCount">0</span>
+                        <span class="stat-label">Web Results</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="githubCount">0</span>
+                        <span class="stat-label">GitHub Repos</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="totalCount">0</span>
+                        <span class="stat-label">Total Results</span>
+                    </div>
+                </div>
+                
+                <div class="log-container" id="researchResults" style="max-height: 400px;">
+                    <div class="log-entry">Research results will appear here...</div>
+                </div>
+                
+                <div style="margin-top: 16px; display: flex; gap: 12px;">
+                    <button class="btn btn-secondary" id="saveResearchBtn" disabled>
+                        💾 Save Results
+                    </button>
+                    <button class="btn btn-primary" id="proceedToGenerateBtn" disabled>
+                        ➡️ Proceed to Generate
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generate Tab -->
+        <div id="generate" class="tab-content">
+            <div class="grid grid-2">
+                <div class="glass-container">
+                    <div class="card-title">⚙️ Generation Settings</div>
+                    <div class="card-subtitle">Configure dataset generation parameters</div>
+                    
+                    <form id="generateForm">
+                        <div class="grid grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Conversation Turns</label>
+                                <input type="number" class="form-input" id="conversationTurns" 
+                                       value="3" min="1" max="10">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Expansion Factor</label>
+                                <input type="number" class="form-input" id="expansionFactor" 
+                                       value="3" min="1" max="10">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Hedging Level</label>
+                            <select class="form-select" id="hedgingLevel">
+                                <option value="confident">Confident</option>
+                                <option value="balanced" selected>Balanced</option>
+                                <option value="cautious">Cautious</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Static Fields</label>
+                            <div style="display: flex; gap: 24px; margin-top: 8px;">
+                                <label style="display: flex; align-items: center; gap: 8px;">
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="humanStatic" checked>
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                    Keep Human Messages Static
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px;">
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="gptStatic">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                    Keep GPT Messages Static
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="cleanDataset" checked style="margin-right: 8px;">
+                                Clean Expanded Dataset
+                            </label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Output Format</label>
+                            <select class="form-select" id="outputFormat">
+                                <option value="jsonl">JSONL</option>
+                                <option value="parquet">Parquet</option>
+                                <option value="csv">CSV</option>
+                                <option value="all">All Formats</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" id="generateBtn">
+                            <span class="loading-spinner" style="display: none;"></span>
+                            🎯 Generate Dataset
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="glass-container">
+                    <div class="card-title">📈 Generation Progress</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="generateProgress"></div>
+                    </div>
+                    <div class="log-container" id="generateLog">
+                        <div class="log-entry info">Ready to generate dataset...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-container">
+                <div class="card-title">📊 Generation Results</div>
+                <div class="grid grid-3" id="generateStats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="originalConversations">0</span>
+                        <span class="stat-label">Original Conversations</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="expandedConversations">0</span>
+                        <span class="stat-label">Expanded Conversations</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="cleanedConversations">0</span>
+                        <span class="stat-label">Cleaned Conversations</span>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 16px; display: flex; gap: 12px;">
+                    <button class="btn btn-secondary" id="openOutputBtn" disabled>
+                        📁 Open Output Directory
+                    </button>
+                    <button class="btn btn-primary" id="proceedToAnalyzeBtn" disabled>
+                        ➡️ Analyze Dataset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Process Tab -->
+        <div id="process" class="tab-content">
+            <div class="glass-container">
+                <div class="card-title">📁 Process Existing Papers</div>
+                <div class="card-subtitle">Upload and process existing research papers</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Upload Papers</label>
+                    <input type="file" class="form-input" id="paperFiles" multiple accept=".txt,.md,.pdf">
+                    <div style="margin-top: 8px; font-size: 12px; color: var(--text-muted);">
+                        Supported formats: TXT, MD, PDF
+                    </div>
+                </div>
+                
+                <div class="grid grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Conversation Turns</label>
+                        <input type="number" class="form-input" id="processTurns" value="3" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Expansion Factor</label>
+                        <input type="number" class="form-input" id="processExpansion" value="3" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Output Format</label>
+                        <select class="form-select" id="processFormat">
+                            <option value="jsonl">JSONL</option>
+                            <option value="parquet">Parquet</option>
+                            <option value="csv">CSV</option>
+                            <option value="all">All Formats</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" id="processBtn">
+                    <span class="loading-spinner" style="display: none;"></span>
+                    🔄 Process Papers
+                </button>
+                
+                <div style="margin-top: 24px;">
+                    <div class="card-title">Processing Progress</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="processProgress"></div>
+                    </div>
+                    <div class="log-container" id="processLog">
+                        <div class="log-entry info">Ready to process papers...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analyze Tab -->
+        <div id="analyze" class="tab-content">
+            <div class="grid grid-2">
+                <div class="glass-container">
+                    <div class="card-title">📊 Dataset Analysis</div>
+                    <div class="card-subtitle">Compare original and expanded datasets</div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Original Dataset</label>
+                        <input type="file" class="form-input" id="originalDataset" accept=".jsonl,.parquet,.csv">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Expanded Dataset</label>
+                        <input type="file" class="form-input" id="expandedDataset" accept=".jsonl,.parquet,.csv">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Analysis Options</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="basicStats" checked>
+                                Basic Statistics
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="qualityAnalysis" checked>
+                                Quality Analysis
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="comparisonAnalysis" checked>
+                                Dataset Comparison
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="analyzeBtn">
+                        <span class="loading-spinner" style="display: none;"></span>
+                        📈 Analyze Datasets
+                    </button>
+                </div>
+                
+                <div class="glass-container">
+                    <div class="card-title">Analysis Results</div>
+                    <div class="log-container" id="analysisResults" style="max-height: 500px;">
+                        <div class="log-entry">Analysis results will appear here...</div>
+                    </div>
+                    
+                    <button class="btn btn-secondary" id="saveAnalysisBtn" style="margin-top: 16px;" disabled>
+                        💾 Save Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">

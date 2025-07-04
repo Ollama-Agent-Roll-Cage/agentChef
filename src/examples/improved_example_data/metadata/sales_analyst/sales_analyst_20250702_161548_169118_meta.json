@@ -1,0 +1,12 @@
+{
+  "agent_name": "sales_analyst",
+  "conversation_id": "",
+  "created_at": "",
+  "updated_at": "",
+  "context": "manual_entry",
+  "template_format": "standard",
+  "num_turns": 0,
+  "quality_score": null,
+  "tags": [],
+  "source": "pandas_rag"
+}
