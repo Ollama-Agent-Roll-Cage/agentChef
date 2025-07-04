@@ -11,7 +11,7 @@ Core Components:
 - Storage & Generation tools: For building sophisticated agent workflows
 """
 
-__version__ = '0.2.8'
+__version__ = '0.2.9'
 
 # Core Chef Framework
 from .core.chefs.base_chef import BaseChef
