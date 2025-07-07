@@ -2,7 +2,7 @@
 
 **Last updated:** 7/7/2023
 
-Thank you for using Agent Chef. This software is provided by the Author @LBorcherding as a modular framework for building and experimenting with local AI agent pipelines. By installing, using, or distributing Agent Chef and its components, you agree to the following terms:
+Thank you for using Agent Chef. This software is provided by the @ Agent Roll Cage Team as a modular framework for building and experimenting with local AI agent pipelines. By installing, using, or distributing Agent Chef and its components, you agree to the following terms:
 
 ## 1. Intended Use
 
@@ -13,7 +13,7 @@ Agent Chef is intended for research, development, and educational purposes. It e
 
 ## 2. Ownership & Licensing
 
-Unless otherwise indicated, all original components of Agent Chef are © [Insert Author or Project Name]. You may not rebrand or distribute altered versions of Agent Chef under a different name without written permission.
+Unless otherwise indicated, all original components of Agent Chef are © Agent Roll Cage Team. You may not rebrand or distribute altered versions of Agent Chef under a different name without written permission.
 
 Third-party dependencies used within this tool retain their original licenses and must be respected in derivative work.
 
@@ -49,7 +49,7 @@ Contributors to this project agree to maintain clear documentation of any substa
 
 ## 7. Applicable Law
 
-This license shall be interpreted under the laws of [Insert Country/State of Governance]. You are responsible for adhering to applicable regional, national, and international laws.
+This license shall be interpreted under the laws of the United States of America. You are responsible for adhering to applicable regional, national, and international laws.
 
 ---
 
